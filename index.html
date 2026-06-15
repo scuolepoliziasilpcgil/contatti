@@ -416,21 +416,26 @@
       'wa-michela':'btnMichela'
     };
     const btnId = btnMap[canale];
-    setLoading(btnId, true);
 
+    // Per i link WhatsApp apro subito, prima di qualsiasi await,
+    // altrimenti iOS Safari blocca window.open perché fuori dal tap diretto
+    if(canale === 'wa-gianluca' || canale === 'wa-michela'){
+      const numero = canale === 'wa-gianluca' ? WA_GIANLUCA : WA_MICHELA;
+      const msg = buildWaMsg(d);
+      window.location.href = 'https://wa.me/' + numero + '?text=' + msg;
+    }
+
+    // Salvo i dati in background senza bloccare l'utente
+    setLoading(btnId, true);
     try {
       await saveToSheet({...d, canale});
-      showFeedback('Contatto salvato. Ti ricontatteremo presto!', 'ok');
-
-      if(canale === 'wa-gianluca' || canale === 'wa-michela'){
-        const numero = canale === 'wa-gianluca' ? WA_GIANLUCA : WA_MICHELA;
-        const msg = buildWaMsg(d);
-        setTimeout(() => {
-          window.open('https://wa.me/' + numero + '?text=' + msg, '_blank');
-        }, 400);
+      if(canale === 'form'){
+        showFeedback('Contatto salvato. Ti ricontatteremo presto!', 'ok');
       }
     } catch(e){
-      showFeedback('Errore nell\'invio. Riprova o scatta uno screenshot.', 'err');
+      if(canale === 'form'){
+        showFeedback('Errore nell\'invio. Riprova o scatta uno screenshot.', 'err');
+      }
     } finally {
       setLoading(btnId, false);
     }
