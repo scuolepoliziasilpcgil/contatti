@@ -363,9 +363,12 @@
   }
 
   function buildWaMsg(d){
-    const data = d.dataNascita
-      ? new Date(d.dataNascita).toLocaleDateString('it-IT')
-      : '';
+    let data = '';
+    if(d.dataNascita){
+      const parts = d.dataNascita.split('-');
+      if(parts.length === 3) data = parts[2] + '/' + parts[1] + '/' + parts[0];
+      else data = d.dataNascita;
+    }
     return encodeURIComponent(
       'Ciao, sono ' + d.cognome + ' ' + d.nome +
       ', nato/a il ' + data +
@@ -396,7 +399,13 @@
 
   async function saveToSheet(data){
     const url = 'https://script.google.com/macros/s/' + GAS_URL + '/exec';
-    const body = JSON.stringify({action:'submitContact', ...data});
+    // Converte la data da YYYY-MM-DD a DD/MM/YYYY per lo sheet
+    let dataNascitaFormatted = data.dataNascita || '';
+    if(dataNascitaFormatted && dataNascitaFormatted.includes('-')){
+      const parts = dataNascitaFormatted.split('-');
+      dataNascitaFormatted = parts[2] + '/' + parts[1] + '/' + parts[0];
+    }
+    const body = JSON.stringify({action:'submitContact', ...data, dataNascita: dataNascitaFormatted});
     const res = await fetch(url, {
       method:'POST',
       headers:{'Content-Type':'text/plain'},
