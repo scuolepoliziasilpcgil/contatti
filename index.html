@@ -342,24 +342,36 @@
   let WA_TERZO_NUMERO = '';
   let WA_TERZO_NOME = '';
 
-  // Carica il terzo contatto e il numero corso dallo stato backend
+  function aggiornaTerzoPulsante(nome, numero){
+    WA_TERZO_NOME = nome || '';
+    WA_TERZO_NUMERO = numero ? ('39' + numero.replace(/^\+39/,'').replace(/^0039/,'').replace(/\s+/g,'')) : '';
+    const btnTerzo = document.getElementById('btnTerzo');
+    const btnTerzoLabel = document.getElementById('btnTerzoLabel');
+    if(btnTerzo){
+      if(WA_TERZO_NUMERO && WA_TERZO_NOME){
+        btnTerzoLabel.textContent = 'WhatsApp ' + WA_TERZO_NOME;
+        btnTerzo.style.display = '';
+      } else {
+        btnTerzo.style.display = 'none';
+      }
+    }
+  }
+
+  // Mostra subito il terzo pulsante da localStorage (senza attendere il backend)
+  aggiornaTerzoPulsante(
+    localStorage.getItem('terzoNome') || '',
+    localStorage.getItem('terzoNumero') || ''
+  );
+
+  // Poi aggiorna dal backend e salva in localStorage per le volte successive
   async function loadState(){
     try{
       const res = await fetch(GAS_URL + '?action=state');
       const data = await res.json();
       if(data.corso) document.getElementById('corsoInput').value = data.corso;
-      WA_TERZO_NOME = data.terzoNome || '';
-      WA_TERZO_NUMERO = data.terzoNumero ? ('39' + data.terzoNumero.replace(/^\+39/,'').replace(/^0039/,'').replace(/\s+/g,'')) : '';
-      const btnTerzo = document.getElementById('btnTerzo');
-      const btnTerzoLabel = document.getElementById('btnTerzoLabel');
-      if(btnTerzo){
-        if(WA_TERZO_NUMERO && WA_TERZO_NOME){
-          btnTerzoLabel.textContent = 'WhatsApp ' + WA_TERZO_NOME;
-          btnTerzo.style.display = '';
-        } else {
-          btnTerzo.style.display = 'none';
-        }
-      }
+      localStorage.setItem('terzoNome', data.terzoNome || '');
+      localStorage.setItem('terzoNumero', data.terzoNumero || '');
+      aggiornaTerzoPulsante(data.terzoNome || '', data.terzoNumero || '');
     } catch(e){ /* silenzioso */ }
   }
   loadState();
