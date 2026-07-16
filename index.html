@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SILP CGIL · Lascia i tuoi contatti</title>
+<title>SILP CGIL · Lascia i tuoi contatti — rev.2</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
 <style>
@@ -52,6 +52,13 @@
     height:2.4rem;
     border-radius:8px;
     object-fit:cover;
+    flex:0 0 auto;
+  }
+  .rev-tag{
+    margin-left:auto;
+    font-size:.62rem;
+    opacity:.45;
+    letter-spacing:.08em;
     flex:0 0 auto;
   }
 
@@ -248,6 +255,7 @@
 <header>
   <img src="logo.jpg" alt="SILP CGIL">
   SILP CGIL · Coordinamento Scuole di Polizia
+  <span class="rev-tag">rev.2</span>
 </header>
 
 <div class="config-bar">
@@ -279,31 +287,23 @@
       <input type="tel" id="cellulare" placeholder="333 1234567" autocomplete="tel">
     </div>
     <div class="field">
-      <label for="email">Email</label>
-      <input type="email" id="email" placeholder="mario.rossi@esempio.it" autocomplete="email">
-    </div>
-    <div class="field">
       <label for="scuola">Scuola</label>
       <select id="scuola">
         <option value="">— Seleziona la tua scuola —</option>
-        <optgroup label="Scuole allievi agenti">
-          <option>Scuola allievi agenti di Alessandria</option>
-          <option>Scuola allievi agenti di Campobasso</option>
-          <option>Scuola allievi agenti di Caserta</option>
-          <option>Scuola allievi agenti di Peschiera del Garda</option>
-          <option>Scuola allievi agenti di Piacenza</option>
-          <option>Scuola allievi agenti di Trieste</option>
-          <option>Scuola allievi agenti di Vibo Valentia</option>
-        </optgroup>
-        <optgroup label="Centri e scuole specializzate">
-          <option>Centro addestramento Polizia di Stato di Cesena</option>
-          <option>Centro addestramento e istruzione professionale di Abbasanta</option>
-          <option>Scuola di polizia giudiziaria, amministrativa e investigativa di Brescia</option>
-          <option>Scuola per il controllo del territorio di Pescara</option>
-          <option>Istituto per sovrintendenti di Spoleto</option>
-          <option>Scuola per dirigenti di Nettuno</option>
-          <option>Scuola alpina di Moena</option>
-        </optgroup>
+        <option>Scuola allievi agenti di Alessandria</option>
+        <option>Scuola allievi agenti di Campobasso</option>
+        <option>Scuola allievi agenti di Caserta</option>
+        <option>Scuola allievi agenti di Peschiera del Garda</option>
+        <option>Scuola allievi agenti di Piacenza</option>
+        <option>Scuola allievi agenti di Trieste</option>
+        <option>Scuola allievi agenti di Vibo Valentia</option>
+        <option>Centro addestramento Polizia di Stato di Cesena</option>
+        <option>Centro addestramento e istruzione professionale di Abbasanta</option>
+        <option>Istituto per ispettori di Nettuno</option>
+        <option>Istituto per sovrintendenti di Spoleto</option>
+        <option>Scuola alpina di Moena</option>
+        <option>Scuola di polizia giudiziaria, amministrativa e investigativa di Brescia</option>
+        <option>Scuola per il controllo del territorio di Pescara</option>
       </select>
     </div>
     <div class="field">
@@ -332,10 +332,6 @@
         <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
         <span id="btnTerzoLabel">WhatsApp</span>
       </button>
-      <button class="btn btn-wa" id="btnQuarto" onclick="submit('wa-quarto')" style="display:none">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-        <span id="btnQuartoLabel">WhatsApp</span>
-      </button>
     </div>
 
     <div class="feedback" id="feedback"></div>
@@ -344,13 +340,11 @@
 
 <script>
   // ── CONFIGURAZIONE ──────────────────────────────────────────
-  const GAS_URL = 'https://script.google.com/macros/s/' + 'AKfycbwpLsvoa0fmg0fu-scxghoISuoJGf-Lwg5Gcm_n-4hTBwGqkkLY6p4HSG7ZTV95Xm0m4Q' + '/exec';
+  const GAS_URL = 'https://script.google.com/macros/s/' + 'AKfycbxsD7KImUy2Xa9egcfWmroGzoO1DEaHZwLt4Khocc4DOtAfGmSpPRrYUWufknSeV5fgoQ' + '/exec';
   const WA_GIANLUCA = '393312333830';
   const WA_MICHELA  = '393271150184';
   let WA_TERZO_NUMERO = '';
   let WA_TERZO_NOME = '';
-  let WA_QUARTO_NUMERO = '';
-  let WA_QUARTO_NOME = '';
 
   function aggiornaTerzoPulsante(nome, numero){
     WA_TERZO_NOME = nome || '';
@@ -367,29 +361,10 @@
     }
   }
 
-  function aggiornaQuartoPulsante(nome, numero){
-    WA_QUARTO_NOME = nome || '';
-    WA_QUARTO_NUMERO = numero ? ('39' + numero.replace(/^\+39/,'').replace(/^0039/,'').replace(/\s+/g,'')) : '';
-    const btnQuarto = document.getElementById('btnQuarto');
-    const btnQuartoLabel = document.getElementById('btnQuartoLabel');
-    if(btnQuarto){
-      if(WA_QUARTO_NUMERO && WA_QUARTO_NOME){
-        btnQuartoLabel.textContent = 'WhatsApp ' + WA_QUARTO_NOME;
-        btnQuarto.style.display = '';
-      } else {
-        btnQuarto.style.display = 'none';
-      }
-    }
-  }
-
-  // Mostra subito il terzo e il quarto pulsante da localStorage (senza attendere il backend)
+  // Mostra subito il terzo pulsante da localStorage (senza attendere il backend)
   aggiornaTerzoPulsante(
     localStorage.getItem('terzoNome') || '',
     localStorage.getItem('terzoNumero') || ''
-  );
-  aggiornaQuartoPulsante(
-    localStorage.getItem('quartoNome') || '',
-    localStorage.getItem('quartoNumero') || ''
   );
 
   // Poi aggiorna dal backend e salva in localStorage per le volte successive
@@ -400,10 +375,7 @@
       if(data.corso) document.getElementById('corsoInput').value = data.corso;
       localStorage.setItem('terzoNome', data.terzoNome || '');
       localStorage.setItem('terzoNumero', data.terzoNumero || '');
-      localStorage.setItem('quartoNome', data.quartoNome || '');
-      localStorage.setItem('quartoNumero', data.quartoNumero || '');
       aggiornaTerzoPulsante(data.terzoNome || '', data.terzoNumero || '');
-      aggiornaQuartoPulsante(data.quartoNome || '', data.quartoNumero || '');
     } catch(e){ /* silenzioso */ }
   }
   loadState();
@@ -419,7 +391,6 @@
       cognome:     document.getElementById('cognome').value.trim(),
       dataNascita: document.getElementById('dataNascita').value,
       cellulare:   document.getElementById('cellulare').value.trim(),
-      email:       document.getElementById('email').value.trim(),
       scuola:      document.getElementById('scuola').value,
       note:        document.getElementById('note').value.trim()
     };
@@ -430,8 +401,6 @@
     if(!d.cognome)     return 'Inserisci il cognome.';
     if(!d.dataNascita) return 'Inserisci la data di nascita.';
     if(!d.cellulare)   return 'Inserisci il numero di cellulare.';
-    if(!d.email)       return 'Inserisci la tua email.';
-    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(d.email)) return 'Inserisci una email valida.';
     if(!d.scuola)      return 'Seleziona la scuola.';
     return null;
   }
@@ -496,16 +465,12 @@
       'form':'btnInvia',
       'wa-gianluca':'btnGianluca',
       'wa-michela':'btnMichela',
-      'wa-terzo':'btnTerzo',
-      'wa-quarto':'btnQuarto'
+      'wa-terzo':'btnTerzo'
     };
     const btnId = btnMap[canale];
 
-    if(canale === 'wa-gianluca' || canale === 'wa-michela' || canale === 'wa-terzo' || canale === 'wa-quarto'){
-      const numero = canale === 'wa-gianluca' ? WA_GIANLUCA
-                   : canale === 'wa-michela'  ? WA_MICHELA
-                   : canale === 'wa-terzo'    ? WA_TERZO_NUMERO
-                   : WA_QUARTO_NUMERO;
+    if(canale === 'wa-gianluca' || canale === 'wa-michela' || canale === 'wa-terzo'){
+      const numero = canale === 'wa-gianluca' ? WA_GIANLUCA : canale === 'wa-michela' ? WA_MICHELA : WA_TERZO_NUMERO;
       const msg = buildWaMsg(d);
       window.location.href = 'https://wa.me/' + numero + '?text=' + msg;
     }
@@ -514,7 +479,7 @@
     try {
       await saveToSheet({...d, canale});
       if(canale === 'form'){
-        showFeedback('Contatto salvato. Controlla la tua email, ti abbiamo scritto subito, e ti ricontatteremo presto!', 'ok');
+        showFeedback('Contatto salvato. Ti ricontatteremo presto!', 'ok');
       }
     } catch(e){
       if(canale === 'form'){
