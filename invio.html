@@ -64,6 +64,13 @@ function chiediNomeMittente(){
   return 'SILP CGIL';
 }
 
+function normalizzaTel(tel){
+  let t = tel.replace(/\s+/g,'').replace(/^\+/,'');
+  if(t.startsWith('39')) return t;
+  if(t.startsWith('3')) return '39' + t;
+  return t;
+}
+
 function buildMsg(nomeAllievo) {
   let mittente = getNomeMittente() || chiediNomeMittente();
   return encodeURIComponent(
@@ -156,9 +163,10 @@ fetch(GAS_URL + '?action=getContatti')
       const visti = {};
       const unici = [];
       data.contatti.forEach(function(c){
-        const tel = c.tel.replace(/\s+/g,'');
+        const tel = normalizzaTel(c.tel);
         if(tel && !visti[tel]){
           visti[tel] = true;
+          c.tel = tel;
           unici.push(c);
         }
       });
