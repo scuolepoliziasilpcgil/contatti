@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SILP CGIL · Lascia i tuoi contatti — rev.2</title>
+<title>SILP CGIL · Lascia i tuoi contatti — rev.3</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
 <style>
@@ -255,7 +255,7 @@
 <header>
   <img src="logo.jpg" alt="SILP CGIL">
   SILP CGIL · Coordinamento Scuole di Polizia
-  <span class="rev-tag">rev.2</span>
+  <span class="rev-tag">rev.3</span>
 </header>
 
 <div class="config-bar">
@@ -461,6 +461,17 @@
     const err = validate(d);
     if(err){ showFeedback(err, 'err'); return; }
 
+    // Controllo anti-doppio: se questo numero è già stato inviato blocca
+    const KEY_INVIATI = 'silp233_inviati';
+    const telPulito = (d.cellulare || '').replace(/\s+/g,'').replace(/^\+/,'');
+    try {
+      const inviati = JSON.parse(localStorage.getItem(KEY_INVIATI) || '[]');
+      if(inviati.includes(telPulito)){
+        showFeedback('Hai già lasciato i tuoi contatti. Ti ricontatteremo presto!', 'ok');
+        return;
+      }
+    } catch(e){ /* silenzioso */ }
+
     const btnMap = {
       'form':'btnInvia',
       'wa-gianluca':'btnGianluca',
@@ -478,6 +489,12 @@
     setLoading(btnId, true);
     try {
       await saveToSheet({...d, canale});
+      // Salva il numero nel localStorage per bloccare reinvii
+      try {
+        const inviati = JSON.parse(localStorage.getItem(KEY_INVIATI) || '[]');
+        if(!inviati.includes(telPulito)){ inviati.push(telPulito); }
+        localStorage.setItem(KEY_INVIATI, JSON.stringify(inviati));
+      } catch(e){ /* silenzioso */ }
       if(canale === 'form'){
         showFeedback('Contatto salvato. Ti ricontatteremo presto!', 'ok');
       }
