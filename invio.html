@@ -121,8 +121,18 @@ fetch(GAS_URL + '?action=getContatti')
   .then(function(r){ return r.json(); })
   .then(function(data){
     if(data.contatti){
+      // Deduplica per cellulare, tieni la prima occorrenza
+      const visti = {};
+      const unici = [];
+      data.contatti.forEach(function(c){
+        const tel = c.tel.replace(/\s+/g,'');
+        if(tel && !visti[tel]){
+          visti[tel] = true;
+          unici.push(c);
+        }
+      });
       // Ordina per scuola poi cognome
-      contatti = data.contatti.sort(function(a,b){
+      contatti = unici.sort(function(a,b){
         return a.scuola.localeCompare(b.scuola) || a.cognome.localeCompare(b.cognome);
       });
       render();
