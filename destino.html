@@ -3,83 +3,342 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Destinazioni 233° — SILP CGIL — rev.1</title>
+<title>Destinazioni 233 SILP CGIL rev.2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
-  :root { --blu:#005CA9; --verde:#25D366; --rosso:#C8102E; --grigio:#bbb; --sfondo:#f0f2f5; }
-  * { box-sizing:border-box; margin:0; padding:0; }
-  body { font-family:'Arial',sans-serif; background:var(--sfondo); padding:1rem; }
-  header { background:var(--blu); color:#fff; padding:1rem 1.4rem; border-radius:10px; margin-bottom:1rem; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:.5rem; }
-  header h1 { font-size:1.05rem; }
-  .header-right { display:flex; align-items:center; gap:.8rem; font-size:.82rem; opacity:.85; }
-  .rev-tag { font-size:.62rem; opacity:.5; }
-  .upload-box { background:#fff; border-radius:10px; padding:1.4rem; margin-bottom:1rem; border:2px dashed #cce0f5; text-align:center; }
-  .upload-box h2 { font-size:.95rem; color:var(--blu); margin-bottom:.6rem; }
-  .upload-box p { font-size:.8rem; color:#888; margin-bottom:1rem; }
-  .upload-btn { display:inline-block; background:var(--blu); color:#fff; padding:.6rem 1.4rem; border-radius:8px; cursor:pointer; font-size:.9rem; font-weight:700; }
-  input[type=file]{ display:none; }
-  .progress { background:#fff; border-radius:8px; padding:.5rem 1rem; margin-bottom:.8rem; font-size:.85rem; color:var(--blu); font-weight:700; text-align:center; display:none; }
-  .scuola-label { background:#fff; color:var(--blu); font-weight:bold; font-size:.75rem; letter-spacing:.08em; text-transform:uppercase; padding:.5rem 1rem; border-radius:8px; margin:.8rem 0 .4rem; }
-  .card { background:#fff; border-radius:10px; padding:.75rem 1rem; margin:.3rem 0; display:flex; align-items:center; gap:.8rem; box-shadow:0 1px 3px rgba(0,0,0,.08); transition:opacity .3s; flex-wrap:wrap; }
-  .card.inviato { opacity:.45; }
-  .info { flex:1; min-width:200px; }
-  .nome { font-weight:700; font-size:.95rem; color:#111; }
-  .dest { font-size:.82rem; color:var(--blu); margin-top:.15rem; font-weight:600; }
-  .segretario { font-size:.75rem; color:#666; margin-top:.1rem; }
-  .data-invio { font-size:.7rem; color:var(--verde); margin-top:.1rem; }
-  .tel-input { border:1px solid #ccc; border-radius:8px; padding:.45rem .7rem; font-size:.85rem; width:160px; }
-  .tel-input:focus { outline:none; border-color:var(--blu); }
-  .btn { display:inline-flex; align-items:center; gap:.4rem; background:var(--verde); color:#fff; text-decoration:none; border-radius:8px; padding:.55rem 1rem; font-size:.85rem; font-weight:700; white-space:nowrap; border:none; cursor:pointer; transition:background .2s; }
-  .btn:disabled, .btn.inviato { background:var(--grigio); pointer-events:none; cursor:default; }
-  .btn svg { flex:0 0 auto; }
-  .no-match { font-size:.75rem; color:#e67e22; margin-top:.1rem; }
-  .errore { background:#fdecea; color:#c0392b; border-radius:8px; padding:.8rem 1rem; margin:.5rem 0; font-size:.88rem; }
-  .stats { font-size:.8rem; color:#555; }
-  .icon-btn { background:rgba(255,255,255,.15); border:none; color:#fff; width:2rem; height:2rem; border-radius:50%; cursor:pointer; font-size:1.1rem; display:flex; align-items:center; justify-content:center; transition:background .15s; }
-  .icon-btn:hover { background:rgba(255,255,255,.3); }
-  .overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:100; align-items:center; justify-content:center; padding:1rem; }
-  .overlay.open { display:flex; }
-  .panel { background:#fff; border-radius:14px; padding:1.4rem; width:100%; max-width:600px; max-height:90vh; overflow-y:auto; }
-  .panel h2 { font-size:1rem; color:var(--blu); margin-bottom:1rem; }
-  .panel label { font-size:.78rem; font-weight:700; color:#444; letter-spacing:.06em; text-transform:uppercase; display:block; margin:.8rem 0 .3rem; }
-  .panel textarea { width:100%; border:1px solid #ccc; border-radius:8px; padding:.7rem; font-size:.85rem; font-family:'Arial',sans-serif; line-height:1.5; resize:vertical; min-height:220px; }
-  .panel textarea:focus { outline:none; border-color:var(--blu); }
-  .legenda { background:#f0f6ff; border-radius:8px; padding:.8rem 1rem; font-size:.78rem; margin-top:.8rem; }
-  .legenda strong { color:var(--blu); }
-  .legenda code { background:#e0ecf8; border-radius:4px; padding:.1rem .35rem; font-family:monospace; font-size:.82rem; }
-  .panel-footer { display:flex; gap:.6rem; margin-top:1rem; justify-content:flex-end; }
-  .ghost-btn { background:transparent; border:1px solid var(--blu); color:var(--blu); border-radius:8px; padding:.5rem 1.1rem; font-size:.85rem; font-weight:700; cursor:pointer; }
-  .primary-btn { background:var(--blu); color:#fff; border:none; border-radius:8px; padding:.5rem 1.1rem; font-size:.85rem; font-weight:700; cursor:pointer; }
+:root {
+  --blu:#005CA9;
+  --verde:#25D366;
+  --rosso:#C8102E;
+  --grigio:#bbb;
+  --sfondo:#f0f2f5;
+  --crema:#F7F3E8;
+}
+* { box-sizing:border-box; margin:0; padding:0; }
+body { font-family:'Inter',sans-serif; background:var(--sfondo); padding:1rem; }
+
+/* HEADER */
+header {
+  background:var(--blu);
+  color:#fff;
+  padding:.9rem 1.4rem;
+  border-radius:10px;
+  margin-bottom:1rem;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:.5rem;
+  flex-wrap:wrap;
+}
+.header-left { display:flex; align-items:center; gap:.9rem; }
+.header-left img { width:2.4rem; height:2.4rem; border-radius:8px; object-fit:cover; flex:0 0 auto; }
+.header-eyebrow { font-family:'IBM Plex Mono',monospace; font-size:.62rem; letter-spacing:.15em; text-transform:uppercase; opacity:.7; }
+.header-title { font-size:1rem; font-weight:700; margin-top:.1rem; }
+.header-right { display:flex; align-items:center; gap:.7rem; }
+.rev-tag { font-family:'IBM Plex Mono',monospace; font-size:.6rem; opacity:.45; }
+.icon-btn {
+  background:rgba(255,255,255,.15);
+  border:none;
+  color:#fff;
+  width:2rem;
+  height:2rem;
+  border-radius:50%;
+  cursor:pointer;
+  font-size:1.1rem;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  transition:background .15s;
+  flex:0 0 auto;
+}
+.icon-btn:hover { background:rgba(255,255,255,.3); }
+
+/* PROGRESS */
+.progress {
+  background:#fff;
+  border-radius:8px;
+  padding:.5rem 1rem;
+  margin-bottom:.8rem;
+  font-size:.85rem;
+  color:var(--blu);
+  font-weight:700;
+  text-align:center;
+  display:none;
+}
+
+/* UPLOAD BOX */
+.upload-box {
+  background:#fff;
+  border-radius:10px;
+  padding:1.4rem;
+  margin-bottom:1rem;
+  border:2px dashed #cce0f5;
+  text-align:center;
+}
+.upload-box h2 { font-size:.95rem; color:var(--blu); margin-bottom:.5rem; }
+.upload-box p { font-size:.8rem; color:#888; margin-bottom:1rem; }
+.upload-btn {
+  display:inline-block;
+  background:var(--blu);
+  color:#fff;
+  padding:.6rem 1.4rem;
+  border-radius:8px;
+  cursor:pointer;
+  font-size:.9rem;
+  font-weight:700;
+}
+input[type=file] { display:none; }
+
+/* TOOLBAR */
+.toolbar {
+  display:none;
+  justify-content:flex-end;
+  gap:.5rem;
+  margin-bottom:.5rem;
+}
+.toolbar.visible { display:flex; }
+.danger-btn {
+  background:var(--rosso);
+  color:#fff;
+  border:none;
+  border-radius:8px;
+  padding:.4rem .9rem;
+  font-size:.8rem;
+  font-weight:700;
+  cursor:pointer;
+}
+
+/* SEGRETARI BOX */
+.segretari-box {
+  background:#fff;
+  border-radius:10px;
+  padding:.85rem 1.2rem;
+  margin-bottom:.8rem;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:1rem;
+  flex-wrap:wrap;
+}
+.segretari-label { font-weight:700; font-size:.88rem; color:var(--blu); }
+.segretari-status { font-size:.75rem; color:#888; margin-top:.2rem; }
+.segretari-actions { display:flex; gap:.5rem; align-items:center; }
+.small-btn {
+  background:var(--blu);
+  color:#fff;
+  border:none;
+  border-radius:8px;
+  padding:.4rem .9rem;
+  font-size:.8rem;
+  font-weight:700;
+  cursor:pointer;
+}
+
+/* CARDS */
+.scuola-label {
+  background:#fff;
+  color:var(--blu);
+  font-weight:700;
+  font-size:.72rem;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  padding:.5rem 1rem;
+  border-radius:8px;
+  margin:.8rem 0 .3rem;
+}
+.card {
+  background:#fff;
+  border-radius:10px;
+  padding:.75rem 1rem;
+  margin:.3rem 0;
+  display:flex;
+  align-items:center;
+  gap:.8rem;
+  box-shadow:0 1px 3px rgba(0,0,0,.08);
+  transition:opacity .3s;
+  flex-wrap:wrap;
+}
+.card.inviato { opacity:.42; }
+.info { flex:1; min-width:180px; }
+.nome { font-weight:700; font-size:.95rem; color:#111; }
+.dest { font-size:.82rem; color:var(--blu); margin-top:.2rem; font-weight:600; }
+.seg-info { font-size:.73rem; color:#777; margin-top:.15rem; }
+.data-invio { font-size:.7rem; color:var(--verde); margin-top:.15rem; }
+.no-match { font-size:.73rem; color:#e67e22; margin-top:.15rem; }
+.tel-input {
+  border:1px solid #ccc;
+  border-radius:8px;
+  padding:.45rem .7rem;
+  font-size:.85rem;
+  width:158px;
+  font-family:'Inter',sans-serif;
+}
+.tel-input:focus { outline:none; border-color:var(--blu); }
+.wa-btn {
+  display:inline-flex;
+  align-items:center;
+  gap:.4rem;
+  background:var(--verde);
+  color:#fff;
+  text-decoration:none;
+  border-radius:8px;
+  padding:.55rem 1rem;
+  font-size:.85rem;
+  font-weight:700;
+  white-space:nowrap;
+  border:none;
+  cursor:pointer;
+  transition:background .2s;
+  flex:0 0 auto;
+}
+.wa-btn[disabled], .wa-btn.inviato {
+  background:var(--grigio);
+  pointer-events:none;
+  cursor:default;
+}
+
+/* OVERLAY */
+.overlay {
+  display:none;
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.55);
+  z-index:100;
+  align-items:center;
+  justify-content:center;
+  padding:1rem;
+}
+.overlay.open { display:flex; }
+.panel {
+  background:#fff;
+  border-radius:14px;
+  padding:1.4rem;
+  width:100%;
+  max-width:620px;
+  max-height:90vh;
+  overflow-y:auto;
+}
+.panel h2 { font-size:1rem; color:var(--blu); margin-bottom:1rem; font-weight:700; }
+.field-label {
+  font-size:.75rem;
+  font-weight:700;
+  color:#444;
+  letter-spacing:.06em;
+  text-transform:uppercase;
+  display:block;
+  margin:.9rem 0 .3rem;
+}
+.field-label:first-of-type { margin-top:0; }
+.panel textarea, .panel input[type=text] {
+  width:100%;
+  border:1px solid #ccc;
+  border-radius:8px;
+  padding:.7rem;
+  font-size:.88rem;
+  font-family:'Inter',sans-serif;
+  line-height:1.5;
+}
+.panel textarea { resize:vertical; min-height:140px; }
+.panel textarea:focus, .panel input:focus { outline:none; border-color:var(--blu); }
+.legenda {
+  background:#f0f6ff;
+  border-radius:8px;
+  padding:.75rem 1rem;
+  font-size:.78rem;
+  margin-top:1rem;
+  line-height:1.7;
+  color:#333;
+}
+.legenda code {
+  background:#ddeeff;
+  border-radius:4px;
+  padding:.1rem .35rem;
+  font-family:monospace;
+  font-size:.82rem;
+  color:var(--blu);
+}
+.panel-footer {
+  display:flex;
+  gap:.6rem;
+  margin-top:1.2rem;
+  justify-content:flex-end;
+  flex-wrap:wrap;
+}
+.ghost-btn {
+  background:transparent;
+  border:1px solid var(--blu);
+  color:var(--blu);
+  border-radius:8px;
+  padding:.5rem 1.1rem;
+  font-size:.85rem;
+  font-weight:700;
+  cursor:pointer;
+}
+.primary-btn {
+  background:var(--blu);
+  color:#fff;
+  border:none;
+  border-radius:8px;
+  padding:.5rem 1.3rem;
+  font-size:.85rem;
+  font-weight:700;
+  cursor:pointer;
+}
+.errore {
+  background:#fdecea;
+  color:#c0392b;
+  border-radius:8px;
+  padding:.8rem 1rem;
+  margin:.5rem 0;
+  font-size:.88rem;
+}
 </style>
 </head>
 <body>
+
 <header>
-  <div style="display:flex; align-items:center; gap:.8rem;">
-    <img src="logo.jpg" alt="SILP CGIL" style="width:2.4rem; height:2.4rem; border-radius:8px; object-fit:cover; flex:0 0 auto;">
+  <div class="header-left">
+    <img src="logo.jpg" alt="SILP CGIL">
     <div>
-      <div style="font-size:.65rem; letter-spacing:.15em; text-transform:uppercase; opacity:.7; font-family:'IBM Plex Mono',monospace;">Coordinamento Nazionale SILP CGIL</div>
-      <h1 style="font-size:1rem; margin:0;">📍 Destinazioni 233° — Invio WhatsApp</h1>
+      <div class="header-eyebrow">Coordinamento Nazionale SILP CGIL</div>
+      <div class="header-title">&#128205; Destinazioni 233&deg; &mdash; Invio WhatsApp</div>
     </div>
   </div>
   <div class="header-right">
-    <span id="totLabel" class="stats">Carica il file destinazioni</span>
-    <span class="rev-tag">rev.1</span>
-    <button class="icon-btn" onclick="document.getElementById('msgOverlay').classList.add('open')" title="Modifica messaggio">⚙</button>
+    <span id="totLabel" style="font-size:.82rem; opacity:.85;">Carica il file destinazioni</span>
+    <span class="rev-tag">rev.2</span>
+    <button class="icon-btn" id="settingsBtn" title="Modifica messaggio">&#9881;</button>
   </div>
 </header>
 
+<!-- OVERLAY MODIFICA MESSAGGIO -->
 <div class="overlay" id="msgOverlay">
   <div class="panel">
-    <h2>✏️ Modifica messaggio WhatsApp</h2>
-    <label>Testo del messaggio</label>
-    <textarea id="msgEditor"></textarea>
+    <h2>&#9999;&#65039; Modifica messaggio WhatsApp</h2>
+
+    <span class="field-label">Testo principale del messaggio</span>
+    <textarea id="msgPrincipale" rows="7"></textarea>
+
+    <span class="field-label">Frase del segretario provinciale</span>
+    <textarea id="msgSegretario" rows="3"></textarea>
+    <p style="font-size:.73rem; color:#888; margin-top:.3rem;">Usa <code style="background:#f0f0f0; padding:.1rem .3rem; border-radius:4px;">[Provincia]</code>, <code style="background:#f0f0f0; padding:.1rem .3rem; border-radius:4px;">[Nome]</code> e <code style="background:#f0f0f0; padding:.1rem .3rem; border-radius:4px;">[Numero]</code> come segnaposto. Questa frase viene usata solo se il file segretari contiene i dati della provincia. Altrimenti viene usata la frase generica sotto.</p>
+
+    <span class="field-label">Frase generica (quando mancano i dati del segretario)</span>
+    <textarea id="msgGenerica" rows="2"></textarea>
+
+    <span class="field-label">Firma</span>
+    <input type="text" id="msgFirma">
+
     <div class="legenda">
-      <strong>Variabili disponibili:</strong><br><br>
-      <code>{NOME}</code> — Nome dell'allievo (es. Francesco)<br>
-      <code>{REPARTO}</code> — Reparto assegnato completo (es. Questura di Milano)<br>
-      <code>{SEGRETARIO_MSG}</code> — Frase automatica con nome e numero del segretario provinciale, oppure formula generica se non disponibile<br><br>
-      <strong>Esempio:</strong><br>
-      <em>Ciao {NOME}, sei stato assegnato a {REPARTO}! {SEGRETARIO_MSG}</em>
+      <strong>Variabili disponibili nel testo principale:</strong><br>
+      <code>{NOME}</code> &mdash; Nome dell'allievo<br>
+      <code>{REPARTO}</code> &mdash; Reparto assegnato completo<br>
+      <code>{SEGRETARIO_MSG}</code> &mdash; Frase segretario (con dati reali o generica)<br>
+      <code>{FIRMA}</code> &mdash; La firma impostata sopra
     </div>
+
     <div class="panel-footer">
       <button class="ghost-btn" onclick="resetMsg()">Ripristina originale</button>
       <button class="ghost-btn" onclick="document.getElementById('msgOverlay').classList.remove('open')">Annulla</button>
@@ -87,79 +346,96 @@
     </div>
   </div>
 </div>
+
+<!-- UPLOAD FILE DESTINAZIONI -->
+<div class="upload-box" id="uploadBox">
   <h2>Carica il file Excel con le destinazioni</h2>
-  <p>Il file deve avere le colonne: COGNOME, NOME, NASCITA, SCUOLA, ASSEGNATO C/O</p>
-  <label class="upload-btn" for="fileInput">📂 Scegli file Excel</label>
+  <p>Il file deve avere le colonne: COGNOME, NOME, SCUOLA, ASSEGNATO C/O</p>
+  <label class="upload-btn" for="fileInput">&#128194; Scegli file Excel</label>
   <input type="file" id="fileInput" accept=".xlsx,.xls">
 </div>
 
-<div style="display:none; text-align:right; margin-bottom:.5rem;" id="cambiaFileBox">
-  <button onclick="eliminaFile()" style="background:#C8102E; color:#fff; border:none; border-radius:8px; padding:.4rem .9rem; font-size:.8rem; font-weight:700; cursor:pointer;">🗑 Elimina file destinazioni</button>
+<!-- TOOLBAR (visibile dopo caricamento) -->
+<div class="toolbar" id="toolbar">
+  <button class="danger-btn" onclick="eliminaFile()">&#128465; Elimina file destinazioni</button>
 </div>
 
-<div style="background:#fff; border-radius:10px; padding:1rem 1.4rem; margin-bottom:.8rem; display:flex; align-items:center; justify-content:space-between; gap:1rem; flex-wrap:wrap;" id="segretariBox">
+<!-- PROGRESS -->
+<div class="progress" id="progress"></div>
+
+<!-- BOX SEGRETARI -->
+<div class="segretari-box">
   <div>
-    <div style="font-weight:700; font-size:.88rem; color:#005CA9;">📋 Segretari provinciali</div>
-    <div id="segretariStatus" style="font-size:.75rem; color:#888; margin-top:.2rem;">Nessun file caricato — il messaggio userà la formula generica</div>
+    <div class="segretari-label">&#128203; Segretari provinciali</div>
+    <div class="segretari-status" id="segretariStatus">Nessun file caricato &mdash; verr&agrave; usata la frase generica</div>
   </div>
-  <div style="display:flex; gap:.5rem; align-items:center;">
-    <label style="background:#005CA9; color:#fff; border-radius:8px; padding:.4rem .9rem; font-size:.8rem; font-weight:700; cursor:pointer;" for="fileSegretari">📂 Carica segretari</label>
-    <input type="file" id="fileSegretari" accept=".xlsx,.xls" style="display:none">
-    <button id="eliminaSegretariBtn" onclick="eliminaSegretari()" style="display:none; background:#C8102E; color:#fff; border:none; border-radius:8px; padding:.4rem .9rem; font-size:.8rem; font-weight:700; cursor:pointer;">🗑 Elimina</button>
+  <div class="segretari-actions">
+    <label class="small-btn" for="fileSegretari">&#128194; Carica</label>
+    <input type="file" id="fileSegretari" accept=".xlsx,.xls">
+    <button class="danger-btn" id="eliminaSegBtn" onclick="eliminaSegretari()" style="display:none;">&#128465; Elimina</button>
   </div>
 </div>
 
-<div class="progress" id="progress">0 / 0 inviati</div>
+<!-- LISTA ALLIEVI -->
 <div id="lista"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbxsD7KImUy2Xa9egcfWmroGzoO1DEaHZwLt4Khocc4DOtAfGmSpPRrYUWufknSeV5fgoQ/exec';
-const KEY_INVIATI = 'destino233_inviati';
+var GAS_URL = 'https://script.google.com/macros/s/AKfycbxsD7KImUy2Xa9egcfWmroGzoO1DEaHZwLt4Khocc4DOtAfGmSpPRrYUWufknSeV5fgoQ/exec';
+var KEY_INVIATI = 'destino233_inviati';
+var KEY_MSG = 'destino233_msg';
 
-// ── SEGRETARI PROVINCIALI ────────────────────────────────────
-// Compilare con i dati reali quando disponibili
-// Formato: 'PROVINCIA': { nome: 'Nome Cognome', tel: '393XXXXXXXXX' }
-const SEGRETARI = {
-  // Esempi da completare:
-  // 'MILANO': { nome: 'Mario Rossi', tel: '393331234567' },
-  // 'ROMA': { nome: 'Luca Bianchi', tel: '393342345678' },
-};
+var SEGRETARI = {};
+var allAllievi = [];
+var contatti = {};
 
-const MSG_DEFAULT = "Ciao {NOME}, \u00e8 arrivata la tua destinazione: {REPARTO}! \uD83C\uDF89\n" +
-"Finalmente ci siamo. Spero che sia la destinazione che speravi, o almeno una che ti dar\u00e0 l\u2019opportunit\u00e0 di crescere e fare bene.\n" +
-"Da oggi fai parte di una realt\u00e0 concreta e noi del SILP CGIL siamo l\u00ec con te. {SEGRETARIO_MSG}\n" +
-"Nel frattempo se hai dubbi, domande o semplicemente vuoi capire cosa ti aspetta, scrivici senza pensarci.\n" +
-"In bocca al lupo e benvenuto/a nella famiglia SILP CGIL. \uD83C\uDF40\n" +
-"Il Coordinamento Nazionale SILP CGIL";
+// ── MESSAGGI DEFAULT ─────────────────────────────────────────
+var DEFAULT_PRINCIPALE = 'Ciao {NOME}, \u00e8 arrivata la tua destinazione: {REPARTO}! \uD83C\uDF89\nFinalmente ci siamo. Spero che sia la destinazione che speravi, o almeno una che ti dar\u00e0 l\u2019opportunit\u00e0 di crescere e fare bene.\nDa oggi fai parte di una realt\u00e0 concreta e noi del SILP CGIL siamo l\u00ec con te. {SEGRETARIO_MSG}\nNel frattempo se hai dubbi, domande o semplicemente vuoi capire cosa ti aspetta, scrivici senza pensarci.\nIn bocca al lupo e benvenuto/a nella famiglia SILP CGIL. \uD83C\uDF40\n{FIRMA}';
+var DEFAULT_SEGRETARIO = 'Presto verrai contattato/a da [Nome], Segretario provinciale SILP CGIL di [Provincia] ([Numero]), o da un suo delegato, per farti conoscere la realt\u00e0 del posto, le persone giuste e come muoverti fin dai primi giorni.';
+var DEFAULT_GENERICA = 'Presto verrai contattato/a dalla Segreteria provinciale SILP CGIL di [Provincia] per farti conoscere la realt\u00e0 del posto, le persone giuste e come muoverti fin dai primi giorni.';
+var DEFAULT_FIRMA = 'Il Coordinamento Nazionale SILP CGIL';
 
-const KEY_MSG = 'destino233_msg';
-
-function getMsgTemplate() {
-  return localStorage.getItem(KEY_MSG) || MSG_DEFAULT;
+function getMsg() {
+  try { return JSON.parse(localStorage.getItem(KEY_MSG) || 'null') || {}; } catch(e) { return {}; }
 }
 
+function getMsgPrincipale() { return getMsg().principale || DEFAULT_PRINCIPALE; }
+function getMsgSegretario() { return getMsg().segretario || DEFAULT_SEGRETARIO; }
+function getMsgGenerica() { return getMsg().generica || DEFAULT_GENERICA; }
+function getMsgFirma() { return getMsg().firma || DEFAULT_FIRMA; }
+
 function salvaMsg() {
-  const val = document.getElementById('msgEditor').value.trim();
-  if(val) localStorage.setItem(KEY_MSG, val);
+  var m = {
+    principale: document.getElementById('msgPrincipale').value.trim() || DEFAULT_PRINCIPALE,
+    segretario: document.getElementById('msgSegretario').value.trim() || DEFAULT_SEGRETARIO,
+    generica: document.getElementById('msgGenerica').value.trim() || DEFAULT_GENERICA,
+    firma: document.getElementById('msgFirma').value.trim() || DEFAULT_FIRMA
+  };
+  localStorage.setItem(KEY_MSG, JSON.stringify(m));
   document.getElementById('msgOverlay').classList.remove('open');
+  if(allAllievi.length) render();
 }
 
 function resetMsg() {
-  if(!confirm('Ripristini il messaggio originale?')) return;
+  if(!confirm('Ripristini tutti i testi originali?')) return;
   localStorage.removeItem(KEY_MSG);
-  document.getElementById('msgEditor').value = MSG_DEFAULT;
+  apriPannello();
+  if(allAllievi.length) render();
 }
 
-// Popola il textarea quando si apre il pannello
-document.querySelector('[onclick*="msgOverlay"]').addEventListener('click', function() {
-  document.getElementById('msgEditor').value = getMsgTemplate();
-});
+function apriPannello() {
+  document.getElementById('msgPrincipale').value = getMsgPrincipale();
+  document.getElementById('msgSegretario').value = getMsgSegretario();
+  document.getElementById('msgGenerica').value = getMsgGenerica();
+  document.getElementById('msgFirma').value = getMsgFirma();
+  document.getElementById('msgOverlay').classList.add('open');
+}
 
-const WA_SVG = `<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>`;
+document.getElementById('settingsBtn').addEventListener('click', apriPannello);
 
+// ── BUILDER MESSAGGIO ────────────────────────────────────────
 function normalizzaTel(tel) {
-  let t = String(tel || '').replace(/\s+/g,'').replace(/^\+/,'');
+  var t = String(tel || '').replace(/\s+/g,'').replace(/^\+/,'');
   if(t.startsWith('39') && t.length > 11) return t;
   if(t.startsWith('3')) return '39' + t;
   return t;
@@ -169,227 +445,137 @@ function normalizzaNome(s) {
   return String(s || '').trim().toUpperCase().replace(/\s+/g,' ');
 }
 
+function buildMsg(nome, reparto, provincia) {
+  var provKey = normalizzaNome(provincia).split(' ').pop();
+  var seg = SEGRETARI[provKey] || SEGRETARI[normalizzaNome(provincia)];
+  var segFrase;
+  if(seg && seg.nome) {
+    segFrase = getMsgSegretario()
+      .replace(/\[Nome\]/gi, seg.nome)
+      .replace(/\[Provincia\]/gi, provincia || provKey)
+      .replace(/\[Numero\]/gi, seg.tel ? ('+' + seg.tel) : 'contatto in arrivo');
+  } else {
+    segFrase = getMsgGenerica().replace(/\[Provincia\]/gi, provincia || provKey);
+  }
+  var testo = getMsgPrincipale()
+    .replace(/\{NOME\}/g, nome)
+    .replace(/\{REPARTO\}/g, reparto)
+    .replace(/\{SEGRETARIO_MSG\}/g, segFrase)
+    .replace(/\{FIRMA\}/g, getMsgFirma());
+  return encodeURIComponent(testo);
+}
+
+// ── ANTI-DOPPIO INVIO ────────────────────────────────────────
 function getInviati() {
   try { return JSON.parse(localStorage.getItem(KEY_INVIATI) || '{}'); } catch(e) { return {}; }
 }
 
-function saveInviato(chiave, dest) {
-  const inv = getInviati();
-  inv[chiave] = { dest, ts: new Date().toLocaleString('it-IT') };
+function saveInviato(chiave) {
+  var inv = getInviati();
+  inv[chiave] = new Date().toLocaleString('it-IT');
   localStorage.setItem(KEY_INVIATI, JSON.stringify(inv));
 }
 
-function buildMsg(nome, reparto, provincia) {
-  const prov = normalizzaNome(provincia).split(' ')[0];
-  const seg = SEGRETARI[prov];
-  let segMsg = '';
-  if(seg && seg.nome) {
-    segMsg = `Presto verrai contattato/a da ${seg.nome}, Segretario provinciale SILP CGIL di ${prov.charAt(0)+prov.slice(1).toLowerCase()} (${seg.tel ? '+'+seg.tel : 'contatto in arrivo'}), o da un suo delegato, per farti conoscere la realtà del posto, le persone giuste e come muoverti fin dai primi giorni.`;
+function segna(chiave, btnEl, cardEl) {
+  setTimeout(function() {
+    saveInviato(chiave);
+    btnEl.classList.add('inviato');
+    btnEl.innerHTML = '\u2713 Inviato';
+    cardEl.classList.add('inviato');
+    var dataEl = cardEl.querySelector('.data-invio');
+    if(dataEl) dataEl.textContent = 'Inviato il ' + getInviati()[chiave];
+    aggiornaProgress();
+  }, 700);
+}
+
+function aggiornaProgress() {
+  var inv = getInviati();
+  var conTel = allAllievi.filter(function(a) { return a.tel; }).length;
+  var inviati = allAllievi.filter(function(a) { return inv[a.chiave]; }).length;
+  var el = document.getElementById('progress');
+  el.style.display = 'block';
+  el.textContent = inviati + ' / ' + conTel + ' inviati  \u2022  ' + allAllievi.length + ' totali  \u2022  ' + (allAllievi.length - conTel) + ' senza numero';
+  document.getElementById('totLabel').textContent = allAllievi.length + ' destinazioni';
+}
+
+// ── ABILITA PULSANTE CON NUMERO INSERITO ────────────────────
+function abilitaBtn(chiave, val) {
+  var tel = normalizzaTel(val);
+  var btn = document.getElementById('btn_' + chiave);
+  var a = allAllievi.find(function(x) { return x.chiave === chiave; });
+  if(!btn || !a) return;
+  if(tel.length >= 11) {
+    a.tel = tel;
+    btn.removeAttribute('disabled');
+    btn.href = 'https://wa.me/' + tel + '?text=' + buildMsg(a.nome, a.reparto, a.provincia);
   } else {
-    const provDisplay = prov.charAt(0) + prov.slice(1).toLowerCase();
-    segMsg = `Presto verrai contattato/a dalla segreteria provinciale SILP CGIL di ${provDisplay} o da un suo delegato, per farti conoscere la realtà del posto, le persone giuste e come muoverti fin dai primi giorni.`;
+    btn.setAttribute('disabled', '');
   }
-  return encodeURIComponent(
-    getMsgTemplate()
-      .replace(/\{NOME\}/g, nome)
-      .replace(/\{REPARTO\}/g, reparto)
-      .replace(/\{SEGRETARIO_MSG\}/g, segMsg)
-  );
 }
 
-function aggiornaProgress(allievi) {
-  const inv = getInviati();
-  const inviati = allievi.filter(a => inv[a.chiave]).length;
-  const conTel = allievi.filter(a => a.tel).length;
-  document.getElementById('progress').style.display = 'block';
-  document.getElementById('progress').textContent = `${inviati} / ${conTel} inviati (${allievi.length} totali, ${allievi.length - conTel} senza numero)`;
-  document.getElementById('totLabel').textContent = `${allievi.length} destinazioni caricate`;
-}
+// ── WA SVG ───────────────────────────────────────────────────
+var WA_SVG = '<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>';
 
-let allAllievi = [];
-let contatti = {};
-
+// ── RENDER ───────────────────────────────────────────────────
 function render() {
-  const lista = document.getElementById('lista');
-  const inv = getInviati();
-
-  // Raggruppa per scuola provenienza
-  const perScuola = {};
-  allAllievi.forEach(a => {
-    if(!perScuola[a.scuola]) perScuola[a.scuola] = [];
-    perScuola[a.scuola].push(a);
+  var lista = document.getElementById('lista');
+  var inv = getInviati();
+  var perScuola = {};
+  allAllievi.forEach(function(a) {
+    var k = a.scuola || 'SCUOLA NON INDICATA';
+    if(!perScuola[k]) perScuola[k] = [];
+    perScuola[k].push(a);
   });
 
-  let html = '';
-  Object.keys(perScuola).sort().forEach(scuola => {
-    html += `<div class="scuola-label">${scuola}</div>`;
-    perScuola[scuola].forEach(a => {
-      const isInviato = !!inv[a.chiave];
-      const tel = a.tel;
-      const waLink = tel ? `https://wa.me/${tel}?text=${buildMsg(a.nome, a.reparto, a.provincia)}` : '';
-      const seg = SEGRETARI[(a.provincia || '').toUpperCase().split(' ')[0]];
-      const segInfo = seg ? `Segretario: ${seg.nome}` : `Segretario non ancora inserito`;
+  var html = '';
+  Object.keys(perScuola).sort().forEach(function(scuola) {
+    html += '<div class="scuola-label">' + scuola + '</div>';
+    perScuola[scuola].forEach(function(a) {
+      var isInviato = !!inv[a.chiave];
+      var tel = a.tel;
+      var provKey = normalizzaNome(a.provincia).split(' ').pop();
+      var seg = SEGRETARI[provKey] || SEGRETARI[normalizzaNome(a.provincia)];
+      var segInfo = seg && seg.nome ? ('Segretario: ' + seg.nome + (seg.tel ? ' \u2022 +' + seg.tel : '')) : 'Segretario non ancora inserito';
+      var waLink = tel ? ('https://wa.me/' + tel + '?text=' + buildMsg(a.nome, a.reparto, a.provincia)) : '';
+      var safeChiave = a.chiave.replace(/'/g, "\\'");
 
-      html += `<div class="card${isInviato ? ' inviato' : ''}" id="card_${a.chiave}">
-        <div class="info">
-          <div class="nome">${a.cognome} ${a.nome}</div>
-          <div class="dest">📍 ${a.reparto || '—'}</div>
-          <div class="segretario">🤝 ${segInfo}</div>
-          ${isInviato ? `<div class="data-invio">✓ Inviato il ${inv[a.chiave].ts}</div>` : ''}
-          ${!a.tel ? `<div class="no-match">⚠️ Numero non trovato nei contatti</div>` : ''}
-        </div>
-        ${!tel ? `
-          <input class="tel-input" type="tel" id="tel_${a.chiave}" placeholder="39XXXXXXXXXX"
-            oninput="abilitaBtn('${a.chiave}', this.value)">
-        ` : ''}
-        <a class="btn${isInviato ? ' inviato' : (!tel ? '' : '')}"
-          id="btn_${a.chiave}"
-          href="${waLink}"
-          target="_blank"
-          ${!tel ? 'disabled' : ''}
-          onclick="segna('${a.chiave}', '${a.reparto}', this, document.getElementById('card_${a.chiave}'))">
-          ${isInviato ? '✓ Inviato' : WA_SVG + ' Invia WA'}
-        </a>
-      </div>`;
+      html += '<div class="card' + (isInviato ? ' inviato' : '') + '" id="card_' + a.chiave + '">';
+      html += '<div class="info">';
+      html += '<div class="nome">' + a.cognome + ' ' + a.nome + '</div>';
+      html += '<div class="dest">\uD83D\uDCCD ' + (a.reparto || '&mdash;') + '</div>';
+      html += '<div class="seg-info">\uD83E\uDD1D ' + segInfo + '</div>';
+      if(isInviato) html += '<div class="data-invio">\u2713 Inviato il ' + inv[a.chiave] + '</div>';
+      if(!tel) html += '<div class="no-match">\u26A0\uFE0F Numero non trovato nei contatti</div>';
+      html += '</div>';
+      if(!tel) {
+        html += '<input class="tel-input" type="tel" id="tel_' + a.chiave + '" placeholder="39XXXXXXXXXX" oninput="abilitaBtn(\'' + safeChiave + '\', this.value)">';
+      }
+      html += '<a class="wa-btn' + (isInviato ? ' inviato' : '') + '" id="btn_' + a.chiave + '"';
+      if(waLink) html += ' href="' + waLink + '" target="_blank"';
+      if(!tel) html += ' disabled';
+      html += ' onclick="segna(\'' + safeChiave + '\', this, document.getElementById(\'card_' + a.chiave + '\'))">';
+      html += isInviato ? '\u2713 Inviato' : (WA_SVG + ' Invia WA');
+      html += '</a>';
+      html += '</div>';
     });
   });
   lista.innerHTML = html;
-  aggiornaProgress(allAllievi);
+  aggiornaProgress();
 }
 
-function abilitaBtn(chiave, val) {
-  const tel = normalizzaTel(val);
-  const btn = document.getElementById('btn_' + chiave);
-  const a = allAllievi.find(x => x.chiave === chiave);
-  if(tel.length >= 11 && btn && a) {
-    btn.removeAttribute('disabled');
-    btn.href = `https://wa.me/${tel}?text=${buildMsg(a.nome, a.reparto, a.provincia)}`;
-    a.tel = tel;
-  } else if(btn) {
-    btn.setAttribute('disabled', true);
-  }
-}
-
-function segna(chiave, dest, btnEl, cardEl) {
-  setTimeout(function() {
-    saveInviato(chiave, dest);
-    btnEl.classList.add('inviato');
-    btnEl.innerHTML = '✓ Inviato';
-    cardEl.classList.add('inviato');
-    aggiornaProgress(allAllievi);
-  }, 800);
-}
-
-// Carica i contatti dal GAS
-function caricaContatti(callback) {
-  fetch(GAS_URL + '?action=getContatti')
-    .then(r => r.json())
-    .then(data => {
-      if(data.contatti) {
-        data.contatti.forEach(c => {
-          const chiave = normalizzaNome(c.cognome) + '|' + normalizzaNome(c.nome);
-          const chiaveSoloCognome = normalizzaNome(c.cognome);
-          const tel = normalizzaTel(c.tel);
-          if(tel) {
-            contatti[chiave] = tel;
-            contatti[chiaveSoloCognome] = tel; // fallback per cognome solo
-          }
-        });
-      }
-      callback();
-    })
-    .catch(() => callback());
-}
-
-function eliminaFile() {
-  if(!confirm('Elimini il file caricato? La lista verrà svuotata.')) return;
-  allAllievi = [];
-  document.getElementById('lista').innerHTML = '';
-  document.getElementById('progress').style.display = 'none';
-  document.getElementById('cambiaFileBox').style.display = 'none';
-  document.getElementById('uploadBox').style.display = 'block';
-  document.getElementById('fileInput').value = '';
-  document.getElementById('totLabel').textContent = 'Carica il file destinazioni';
-}
-
-function eliminaSegretari() {
-  if(!confirm('Elimini il file segretari? Verrà usata la formula generica.')) return;
-  Object.keys(SEGRETARI).forEach(k => delete SEGRETARI[k]);
-  document.getElementById('segretariStatus').textContent = 'Nessun file caricato — il messaggio userà la formula generica';
-  document.getElementById('eliminaSegretariBtn').style.display = 'none';
-  document.getElementById('fileSegretari').value = '';
-  if(allAllievi.length) render();
-}
-
-document.getElementById('fileSegretari').addEventListener('change', function(e) {
-  const file = e.target.files[0];
+// ── CARICA FILE DESTINAZIONI ─────────────────────────────────
+function processaFileDestinazioni(file) {
   if(!file) return;
-  const reader = new FileReader();
+  var reader = new FileReader();
   reader.onload = function(ev) {
-    const wb = XLSX.read(ev.target.result, { type:'binary' });
-    const ws = wb.Sheets[wb.SheetNames[0]];
-    const rows = XLSX.utils.sheet_to_json(ws, { header:1, defval:'' });
+    var wb = XLSX.read(ev.target.result, { type:'binary' });
+    var ws = wb.Sheets[wb.SheetNames[0]];
+    var rows = XLSX.utils.sheet_to_json(ws, { header:1, defval:'' });
 
-    // Pulisce i segretari esistenti
-    Object.keys(SEGRETARI).forEach(k => delete SEGRETARI[k]);
-
-    let trovati = 0;
-    let iProv = -1, iNome = -1, iCognome = -1, iTel = -1;
-    let headerRow = -1;
-
-    for(let i = 0; i < Math.min(rows.length, 5); i++) {
-      const r = rows[i].map(c => String(c).toUpperCase());
-      if(r.some(c => c.includes('PROV'))) {
-        headerRow = i;
-        iProv    = r.findIndex(c => c.includes('PROV'));
-        iCognome = r.findIndex(c => c === 'COGNOME');
-        iNome    = r.findIndex(c => c === 'NOME' || c.includes('SEGRETARIO'));
-        // Se non trova COGNOME separato cerca campo unico
-        if(iCognome < 0) iNome = r.findIndex(c => c.includes('NOME') || c.includes('SEGRETARIO'));
-        iTel = r.findIndex(c => c.includes('TEL') || c.includes('CEL') || c.includes('NUMERO'));
-        break;
-      }
-    }
-
-    const startRow = headerRow >= 0 ? headerRow + 1 : 0;
-    for(let i = startRow; i < rows.length; i++) {
-      const r = rows[i];
-      const prov = String(r[iProv >= 0 ? iProv : 0] || '').trim().toUpperCase();
-      let nomeCompleto = '';
-      if(iCognome >= 0 && iNome >= 0) {
-        // Due campi separati: li unisce
-        nomeCompleto = (String(r[iCognome] || '').trim() + ' ' + String(r[iNome] || '').trim()).trim();
-      } else {
-        // Campo unico
-        nomeCompleto = String(r[iNome >= 0 ? iNome : 1] || '').trim();
-      }
-      const tel = normalizzaTel(String(r[iTel >= 0 ? iTel : 2] || '').trim());
-      if(prov && nomeCompleto) {
-        SEGRETARI[prov] = { nome: nomeCompleto, tel };
-        trovati++;
-      }
-    }
-
-    document.getElementById('segretariStatus').textContent = `✓ ${trovati} segretari caricati`;
-    document.getElementById('eliminaSegretariBtn').style.display = 'inline-block';
-    if(allAllievi.length) render();
-  };
-  reader.readAsBinaryString(file);
-});
-
-// Gestisce il file destinazioni (primo caricamento e cambio file)
-function gestisciFile(file) {
-  if(!file) return;
-  const reader = new FileReader();
-  reader.onload = function(ev) {
-    const wb = XLSX.read(ev.target.result, { type:'binary' });
-    const ws = wb.Sheets[wb.SheetNames[0]];
-    const rows = XLSX.utils.sheet_to_json(ws, { header:1, defval:'' });
-
-    let headerRow = -1;
-    for(let i = 0; i < Math.min(rows.length, 10); i++) {
-      const r = rows[i].map(c => String(c).toUpperCase());
-      if(r.some(c => c.includes('COGNOME')) && r.some(c => c.includes('NOME'))) {
+    var headerRow = -1;
+    for(var i = 0; i < Math.min(rows.length, 10); i++) {
+      var r = rows[i].map(function(c) { return String(c).toUpperCase(); });
+      if(r.some(function(c) { return c.includes('COGNOME'); }) && r.some(function(c) { return c.includes('NOME'); })) {
         headerRow = i; break;
       }
     }
@@ -398,42 +584,124 @@ function gestisciFile(file) {
       return;
     }
 
-    const headers = rows[headerRow].map(c => String(c).toUpperCase().trim());
-    const iCognome = headers.findIndex(h => h.includes('COGNOME'));
-    const iNome = headers.findIndex(h => h.includes('NOME'));
-    const iScuola = headers.findIndex(h => h.includes('SCUOLA'));
-    const iAssegnato = headers.findIndex(h => h.includes('ASSEGNATO'));
+    var headers = rows[headerRow].map(function(c) { return String(c).toUpperCase().trim(); });
+    var iCognome = headers.findIndex(function(h) { return h.includes('COGNOME'); });
+    var iNome    = headers.findIndex(function(h) { return h === 'NOME' || h.includes('NOME'); });
+    var iScuola  = headers.findIndex(function(h) { return h.includes('SCUOLA'); });
+    var iAssegnato = headers.findIndex(function(h) { return h.includes('ASSEGNATO'); });
 
     allAllievi = [];
-    for(let i = headerRow + 1; i < rows.length; i++) {
-      const r = rows[i];
-      const cognome = normalizzaNome(r[iCognome]);
-      const nome = normalizzaNome(r[iNome]);
-      const scuola = String(r[iScuola] || '').trim() || 'SCUOLA NON INDICATA';
-      const reparto = String(r[iAssegnato] || '').trim();
+    for(var j = headerRow + 1; j < rows.length; j++) {
+      var row = rows[j];
+      var cognome = normalizzaNome(row[iCognome]);
+      var nome    = normalizzaNome(row[iNome]);
       if(!cognome && !nome) continue;
-      const parole = reparto.split(' ');
-      const provincia = parole[parole.length - 1] || '';
-      const chiave = cognome + '|' + nome;
-      const tel = contatti[chiave] || contatti[cognome] || '';
-      allAllievi.push({ cognome, nome, scuola, reparto, provincia, chiave, tel });
+      var scuola  = String(row[iScuola] || '').trim() || 'SCUOLA NON INDICATA';
+      var reparto = String(row[iAssegnato >= 0 ? iAssegnato : iAssegnato] || '').trim();
+      var parole  = reparto.split(/[\s,]+/);
+      var provincia = parole[parole.length - 1] || '';
+      var chiave  = (cognome + '_' + nome).replace(/[^A-Z0-9_]/g,'');
+      var tel     = contatti[cognome + '|' + nome] || contatti[cognome] || '';
+      allAllievi.push({ cognome:cognome, nome:nome, scuola:scuola, reparto:reparto, provincia:provincia, chiave:chiave, tel:tel });
     }
 
     document.getElementById('uploadBox').style.display = 'none';
-    document.getElementById('cambiaFileBox').style.display = 'block';
+    document.getElementById('toolbar').classList.add('visible');
     render();
   };
   reader.readAsBinaryString(file);
 }
 
 document.getElementById('fileInput').addEventListener('change', function(e) {
-  gestisciFile(e.target.files[0]);
+  processaFileDestinazioni(e.target.files[0]);
 });
 
-// Avvio: carica contatti dal GAS poi attende il file
-caricaContatti(function() {
-  console.log('Contatti caricati: ' + Object.keys(contatti).length / 2);
+function eliminaFile() {
+  if(!confirm('Elimini il file destinazioni? La lista verr\u00e0 svuotata.')) return;
+  allAllievi = [];
+  document.getElementById('lista').innerHTML = '';
+  document.getElementById('progress').style.display = 'none';
+  document.getElementById('toolbar').classList.remove('visible');
+  document.getElementById('uploadBox').style.display = 'block';
+  document.getElementById('fileInput').value = '';
+  document.getElementById('totLabel').textContent = 'Carica il file destinazioni';
+}
+
+// ── CARICA FILE SEGRETARI ────────────────────────────────────
+document.getElementById('fileSegretari').addEventListener('change', function(e) {
+  var file = e.target.files[0];
+  if(!file) return;
+  var reader = new FileReader();
+  reader.onload = function(ev) {
+    var wb = XLSX.read(ev.target.result, { type:'binary' });
+    var ws = wb.Sheets[wb.SheetNames[0]];
+    var rows = XLSX.utils.sheet_to_json(ws, { header:1, defval:'' });
+
+    Object.keys(SEGRETARI).forEach(function(k) { delete SEGRETARI[k]; });
+
+    var headerRow = -1, iProv = -1, iCognome = -1, iNome = -1, iTel = -1;
+    for(var i = 0; i < Math.min(rows.length, 5); i++) {
+      var r = rows[i].map(function(c) { return String(c).toUpperCase(); });
+      if(r.some(function(c) { return c.includes('PROV'); })) {
+        headerRow = i;
+        iProv    = r.findIndex(function(c) { return c.includes('PROV'); });
+        iCognome = r.findIndex(function(c) { return c === 'COGNOME'; });
+        iNome    = r.findIndex(function(c) { return c === 'NOME' || c.includes('SEGRETARIO'); });
+        iTel     = r.findIndex(function(c) { return c.includes('TEL') || c.includes('CEL') || c.includes('NUMERO'); });
+        break;
+      }
+    }
+
+    var startRow = headerRow >= 0 ? headerRow + 1 : 0;
+    var trovati = 0;
+    for(var j = startRow; j < rows.length; j++) {
+      var row = rows[j];
+      var prov = String(row[iProv >= 0 ? iProv : 0] || '').trim().toUpperCase();
+      var nomeCompleto;
+      if(iCognome >= 0 && iNome >= 0) {
+        nomeCompleto = (String(row[iCognome]||'').trim() + ' ' + String(row[iNome]||'').trim()).trim();
+      } else {
+        nomeCompleto = String(row[iNome >= 0 ? iNome : 1] || '').trim();
+      }
+      var tel = normalizzaTel(String(row[iTel >= 0 ? iTel : 2] || '').trim());
+      if(prov && nomeCompleto) {
+        SEGRETARI[prov] = { nome:nomeCompleto, tel:tel };
+        trovati++;
+      }
+    }
+
+    document.getElementById('segretariStatus').textContent = '\u2713 ' + trovati + ' segretari caricati';
+    document.getElementById('eliminaSegBtn').style.display = 'inline-block';
+    if(allAllievi.length) render();
+  };
+  reader.readAsBinaryString(file);
 });
+
+function eliminaSegretari() {
+  if(!confirm('Elimini il file segretari?')) return;
+  Object.keys(SEGRETARI).forEach(function(k) { delete SEGRETARI[k]; });
+  document.getElementById('segretariStatus').textContent = 'Nessun file caricato \u2014 verr\u00e0 usata la frase generica';
+  document.getElementById('eliminaSegBtn').style.display = 'none';
+  document.getElementById('fileSegretari').value = '';
+  if(allAllievi.length) render();
+}
+
+// ── CARICA CONTATTI DAL GAS ──────────────────────────────────
+fetch(GAS_URL + '?action=getContatti')
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    if(data.contatti) {
+      data.contatti.forEach(function(c) {
+        var tel = normalizzaTel(c.tel);
+        if(!tel) return;
+        var chiave = normalizzaNome(c.cognome) + '|' + normalizzaNome(c.nome);
+        var soloCognome = normalizzaNome(c.cognome);
+        contatti[chiave] = tel;
+        contatti[soloCognome] = tel;
+      });
+    }
+  })
+  .catch(function() {});
 </script>
 </body>
 </html>
