@@ -52,10 +52,20 @@
   <input type="file" id="fileInput" accept=".xlsx,.xls">
 </div>
 
-<div style="display:none; text-align:right; margin-bottom:.5rem; display:flex; justify-content:flex-end; gap:.5rem;" id="cambiaFileBox">
-  <label class="upload-btn" for="fileInput2" style="background:#888; font-size:.8rem; padding:.4rem .9rem;">🔄 Cambia file</label>
-  <input type="file" id="fileInput2" accept=".xlsx,.xls">
-  <button onclick="eliminaFile()" style="background:#C8102E; color:#fff; border:none; border-radius:8px; padding:.4rem .9rem; font-size:.8rem; font-weight:700; cursor:pointer;">🗑 Elimina file</button>
+<div style="display:none; text-align:right; margin-bottom:.5rem;" id="cambiaFileBox">
+  <button onclick="eliminaFile()" style="background:#C8102E; color:#fff; border:none; border-radius:8px; padding:.4rem .9rem; font-size:.8rem; font-weight:700; cursor:pointer;">🗑 Elimina file destinazioni</button>
+</div>
+
+<div style="background:#fff; border-radius:10px; padding:1rem 1.4rem; margin-bottom:.8rem; display:flex; align-items:center; justify-content:space-between; gap:1rem; flex-wrap:wrap;" id="segretariBox">
+  <div>
+    <div style="font-weight:700; font-size:.88rem; color:#005CA9;">📋 Segretari provinciali</div>
+    <div id="segretariStatus" style="font-size:.75rem; color:#888; margin-top:.2rem;">Nessun file caricato — il messaggio userà la formula generica</div>
+  </div>
+  <div style="display:flex; gap:.5rem; align-items:center;">
+    <label style="background:#005CA9; color:#fff; border-radius:8px; padding:.4rem .9rem; font-size:.8rem; font-weight:700; cursor:pointer;" for="fileSegretari">📂 Carica segretari</label>
+    <input type="file" id="fileSegretari" accept=".xlsx,.xls" style="display:none">
+    <button id="eliminaSegretariBtn" onclick="eliminaSegretari()" style="display:none; background:#C8102E; color:#fff; border:none; border-radius:8px; padding:.4rem .9rem; font-size:.8rem; font-weight:700; cursor:pointer;">🗑 Elimina</button>
+  </div>
 </div>
 
 <div class="progress" id="progress">0 / 0 inviati</div>
@@ -235,11 +245,75 @@ function eliminaFile() {
   document.getElementById('cambiaFileBox').style.display = 'none';
   document.getElementById('uploadBox').style.display = 'block';
   document.getElementById('fileInput').value = '';
-  document.getElementById('fileInput2').value = '';
   document.getElementById('totLabel').textContent = 'Carica il file destinazioni';
 }
 
-// Gestisce entrambi i file input (primo caricamento e cambio file)
+function eliminaSegretari() {
+  if(!confirm('Elimini il file segretari? Verrà usata la formula generica.')) return;
+  Object.keys(SEGRETARI).forEach(k => delete SEGRETARI[k]);
+  document.getElementById('segretariStatus').textContent = 'Nessun file caricato — il messaggio userà la formula generica';
+  document.getElementById('eliminaSegretariBtn').style.display = 'none';
+  document.getElementById('fileSegretari').value = '';
+  if(allAllievi.length) render();
+}
+
+document.getElementById('fileSegretari').addEventListener('change', function(e) {
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(ev) {
+    const wb = XLSX.read(ev.target.result, { type:'binary' });
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(ws, { header:1, defval:'' });
+
+    // Pulisce i segretari esistenti
+    Object.keys(SEGRETARI).forEach(k => delete SEGRETARI[k]);
+
+    let trovati = 0;
+    let iProv = -1, iNome = -1, iCognome = -1, iTel = -1;
+    let headerRow = -1;
+
+    for(let i = 0; i < Math.min(rows.length, 5); i++) {
+      const r = rows[i].map(c => String(c).toUpperCase());
+      if(r.some(c => c.includes('PROV'))) {
+        headerRow = i;
+        iProv    = r.findIndex(c => c.includes('PROV'));
+        iCognome = r.findIndex(c => c === 'COGNOME');
+        iNome    = r.findIndex(c => c === 'NOME' || c.includes('SEGRETARIO'));
+        // Se non trova COGNOME separato cerca campo unico
+        if(iCognome < 0) iNome = r.findIndex(c => c.includes('NOME') || c.includes('SEGRETARIO'));
+        iTel = r.findIndex(c => c.includes('TEL') || c.includes('CEL') || c.includes('NUMERO'));
+        break;
+      }
+    }
+
+    const startRow = headerRow >= 0 ? headerRow + 1 : 0;
+    for(let i = startRow; i < rows.length; i++) {
+      const r = rows[i];
+      const prov = String(r[iProv >= 0 ? iProv : 0] || '').trim().toUpperCase();
+      let nomeCompleto = '';
+      if(iCognome >= 0 && iNome >= 0) {
+        // Due campi separati: li unisce
+        nomeCompleto = (String(r[iCognome] || '').trim() + ' ' + String(r[iNome] || '').trim()).trim();
+      } else {
+        // Campo unico
+        nomeCompleto = String(r[iNome >= 0 ? iNome : 1] || '').trim();
+      }
+      const tel = normalizzaTel(String(r[iTel >= 0 ? iTel : 2] || '').trim());
+      if(prov && nomeCompleto) {
+        SEGRETARI[prov] = { nome: nomeCompleto, tel };
+        trovati++;
+      }
+    }
+
+    document.getElementById('segretariStatus').textContent = `✓ ${trovati} segretari caricati`;
+    document.getElementById('eliminaSegretariBtn').style.display = 'inline-block';
+    if(allAllievi.length) render();
+  };
+  reader.readAsBinaryString(file);
+});
+
+// Gestisce il file destinazioni (primo caricamento e cambio file)
 function gestisciFile(file) {
   if(!file) return;
   const reader = new FileReader();
@@ -289,10 +363,6 @@ function gestisciFile(file) {
 }
 
 document.getElementById('fileInput').addEventListener('change', function(e) {
-  gestisciFile(e.target.files[0]);
-});
-
-document.getElementById('fileInput2').addEventListener('change', function(e) {
   gestisciFile(e.target.files[0]);
 });
 
