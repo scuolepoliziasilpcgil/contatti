@@ -33,7 +33,7 @@ header {
   flex-wrap:wrap;
 }
 .header-left { display:flex; align-items:center; gap:.9rem; }
-.header-left img { width:2.4rem; height:2.4rem; border-radius:8px; object-fit:cover; flex:0 0 auto; }
+.header-left img { width:2.4rem; height:2.4rem; border-radius:4px; object-fit:cover; flex:0 0 auto; }
 .header-eyebrow { font-family:'IBM Plex Mono',monospace; font-size:.62rem; letter-spacing:.15em; text-transform:uppercase; opacity:.7; }
 .header-title { font-size:1rem; font-weight:700; margin-top:.1rem; }
 .header-right { display:flex; align-items:center; gap:.7rem; }
@@ -307,7 +307,6 @@ input[type=file] { display:none; }
     </div>
   </div>
   <div class="header-right">
-    <span id="totLabel" style="font-size:.82rem; opacity:.85;">Carica il file destinazioni</span>
     <span class="rev-tag">rev.2</span>
     <button class="icon-btn" id="settingsBtn" title="Modifica messaggio">&#9881;</button>
   </div>
@@ -495,7 +494,6 @@ function aggiornaProgress() {
   var el = document.getElementById('progress');
   el.style.display = 'block';
   el.textContent = inviati + ' / ' + conTel + ' inviati  \u2022  ' + allAllievi.length + ' totali  \u2022  ' + (allAllievi.length - conTel) + ' senza numero';
-  document.getElementById('totLabel').textContent = allAllievi.length + ' destinazioni';
 }
 
 // ── ABILITA PULSANTE CON NUMERO INSERITO ────────────────────
@@ -541,21 +539,26 @@ function render() {
 
       html += '<div class="card' + (isInviato ? ' inviato' : '') + '" id="card_' + a.chiave + '">';
       html += '<div class="info">';
-      html += '<div class="nome">' + a.cognome + ' ' + a.nome + '</div>';
+      html += '<div class="nome">' + a.cognome + ' ' + a.nome + (tel ? ' <span style="font-weight:400;font-size:.78rem;color:#888;">+' + tel + '</span>' : '') + '</div>';
       html += '<div class="dest">\uD83D\uDCCD ' + (a.reparto || '&mdash;') + '</div>';
       html += '<div class="seg-info">\uD83E\uDD1D ' + segInfo + '</div>';
       if(isInviato) html += '<div class="data-invio">\u2713 Inviato il ' + inv[a.chiave] + '</div>';
-      if(!tel) html += '<div class="no-match">\u26A0\uFE0F Numero non trovato nei contatti</div>';
-      html += '</div>';
-      if(!tel) {
+      if(!tel && !isInviato) {
+        html += '<div class="no-match">\u26A0\uFE0F Numero non trovato &mdash; inseriscilo qui sotto</div>';
+        html += '<div style="display:flex;gap:.5rem;align-items:center;margin-top:.5rem;flex-wrap:wrap;">';
         html += '<input class="tel-input" type="tel" id="tel_' + a.chiave + '" placeholder="39XXXXXXXXXX" oninput="abilitaBtn(\'' + safeChiave + '\', this.value)">';
+        html += '<a class="wa-btn" id="btn_' + a.chiave + '" disabled onclick="segna(\'' + safeChiave + '\', this, document.getElementById(\'card_' + a.chiave + '\'))">';
+        html += WA_SVG + ' Invia WA</a>';
+        html += '</div>';
       }
-      html += '<a class="wa-btn' + (isInviato ? ' inviato' : '') + '" id="btn_' + a.chiave + '"';
-      if(waLink) html += ' href="' + waLink + '" target="_blank"';
-      if(!tel) html += ' disabled';
-      html += ' onclick="segna(\'' + safeChiave + '\', this, document.getElementById(\'card_' + a.chiave + '\'))">';
-      html += isInviato ? '\u2713 Inviato' : (WA_SVG + ' Invia WA');
-      html += '</a>';
+      html += '</div>';
+      if(tel) {
+        html += '<a class="wa-btn' + (isInviato ? ' inviato' : '') + '" id="btn_' + a.chiave + '"';
+        html += ' href="' + waLink + '" target="_blank"';
+        html += ' onclick="segna(\'' + safeChiave + '\', this, document.getElementById(\'card_' + a.chiave + '\'))">';
+        html += isInviato ? '\u2713 Inviato' : (WA_SVG + ' Invia WA');
+        html += '</a>';
+      }
       html += '</div>';
     });
   });
@@ -585,9 +588,9 @@ function processaFileDestinazioni(file) {
     }
 
     var headers = rows[headerRow].map(function(c) { return String(c).toUpperCase().trim(); });
-    var iCognome = headers.findIndex(function(h) { return h.includes('COGNOME'); });
-    var iNome    = headers.findIndex(function(h) { return h === 'NOME' || h.includes('NOME'); });
-    var iScuola  = headers.findIndex(function(h) { return h.includes('SCUOLA'); });
+    var iCognome   = headers.findIndex(function(h) { return h.includes('COGNOME'); });
+    var iNome      = headers.findIndex(function(h) { return h === 'NOME' || (h.includes('NOME') && !h.includes('COGNOME')); });
+    var iScuola    = headers.findIndex(function(h) { return h.includes('SCUOLA'); });
     var iAssegnato = headers.findIndex(function(h) { return h.includes('ASSEGNATO'); });
 
     allAllievi = [];
