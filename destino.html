@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Destinazioni 233° — SILP CGIL — rev.1</title>
+<style>
+  :root { --blu:#005CA9; --verde:#25D366; --rosso:#C8102E; --grigio:#bbb; --sfondo:#f0f2f5; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:'Arial',sans-serif; background:var(--sfondo); padding:1rem; }
+  header { background:var(--blu); color:#fff; padding:1rem 1.4rem; border-radius:10px; margin-bottom:1rem; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:.5rem; }
+  header h1 { font-size:1.05rem; }
+  .header-right { display:flex; align-items:center; gap:.8rem; font-size:.82rem; opacity:.85; }
+  .rev-tag { font-size:.62rem; opacity:.5; }
+  .upload-box { background:#fff; border-radius:10px; padding:1.4rem; margin-bottom:1rem; border:2px dashed #cce0f5; text-align:center; }
+  .upload-box h2 { font-size:.95rem; color:var(--blu); margin-bottom:.6rem; }
+  .upload-box p { font-size:.8rem; color:#888; margin-bottom:1rem; }
+  .upload-btn { display:inline-block; background:var(--blu); color:#fff; padding:.6rem 1.4rem; border-radius:8px; cursor:pointer; font-size:.9rem; font-weight:700; }
+  input[type=file]{ display:none; }
+  .progress { background:#fff; border-radius:8px; padding:.5rem 1rem; margin-bottom:.8rem; font-size:.85rem; color:var(--blu); font-weight:700; text-align:center; display:none; }
+  .scuola-label { background:#fff; color:var(--blu); font-weight:bold; font-size:.75rem; letter-spacing:.08em; text-transform:uppercase; padding:.5rem 1rem; border-radius:8px; margin:.8rem 0 .4rem; }
+  .card { background:#fff; border-radius:10px; padding:.75rem 1rem; margin:.3rem 0; display:flex; align-items:center; gap:.8rem; box-shadow:0 1px 3px rgba(0,0,0,.08); transition:opacity .3s; flex-wrap:wrap; }
+  .card.inviato { opacity:.45; }
+  .info { flex:1; min-width:200px; }
+  .nome { font-weight:700; font-size:.95rem; color:#111; }
+  .dest { font-size:.82rem; color:var(--blu); margin-top:.15rem; font-weight:600; }
+  .segretario { font-size:.75rem; color:#666; margin-top:.1rem; }
+  .data-invio { font-size:.7rem; color:var(--verde); margin-top:.1rem; }
+  .tel-input { border:1px solid #ccc; border-radius:8px; padding:.45rem .7rem; font-size:.85rem; width:160px; }
+  .tel-input:focus { outline:none; border-color:var(--blu); }
+  .btn { display:inline-flex; align-items:center; gap:.4rem; background:var(--verde); color:#fff; text-decoration:none; border-radius:8px; padding:.55rem 1rem; font-size:.85rem; font-weight:700; white-space:nowrap; border:none; cursor:pointer; transition:background .2s; }
+  .btn:disabled, .btn.inviato { background:var(--grigio); pointer-events:none; cursor:default; }
+  .btn svg { flex:0 0 auto; }
+  .no-match { font-size:.75rem; color:#e67e22; margin-top:.1rem; }
+  .errore { background:#fdecea; color:#c0392b; border-radius:8px; padding:.8rem 1rem; margin:.5rem 0; font-size:.88rem; }
+  .stats { font-size:.8rem; color:#555; }
+</style>
+</head>
+<body>
+<header>
+  <h1>📍 Destinazioni 233° — Invio WhatsApp</h1>
+  <div class="header-right">
+    <span id="totLabel" class="stats">Carica il file destinazioni</span>
+    <span class="rev-tag">rev.1</span>
+  </div>
+</header>
+
+<div class="upload-box" id="uploadBox">
+  <h2>Carica il file Excel con le destinazioni</h2>
+  <p>Il file deve avere le colonne: COGNOME, NOME, NASCITA, SCUOLA, ASSEGNATO C/O</p>
+  <label class="upload-btn" for="fileInput">📂 Scegli file Excel</label>
+  <input type="file" id="fileInput" accept=".xlsx,.xls">
+</div>
+
+<div style="display:none; text-align:right; margin-bottom:.5rem; display:flex; justify-content:flex-end; gap:.5rem;" id="cambiaFileBox">
+  <label class="upload-btn" for="fileInput2" style="background:#888; font-size:.8rem; padding:.4rem .9rem;">🔄 Cambia file</label>
+  <input type="file" id="fileInput2" accept=".xlsx,.xls">
+  <button onclick="eliminaFile()" style="background:#C8102E; color:#fff; border:none; border-radius:8px; padding:.4rem .9rem; font-size:.8rem; font-weight:700; cursor:pointer;">🗑 Elimina file</button>
+</div>
+
+<div class="progress" id="progress">0 / 0 inviati</div>
+<div id="lista"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbxsD7KImUy2Xa9egcfWmroGzoO1DEaHZwLt4Khocc4DOtAfGmSpPRrYUWufknSeV5fgoQ/exec';
+const KEY_INVIATI = 'destino233_inviati';
+
+// ── SEGRETARI PROVINCIALI ────────────────────────────────────
+// Compilare con i dati reali quando disponibili
+// Formato: 'PROVINCIA': { nome: 'Nome Cognome', tel: '393XXXXXXXXX' }
+const SEGRETARI = {
+  // Esempi da completare:
+  // 'MILANO': { nome: 'Mario Rossi', tel: '393331234567' },
+  // 'ROMA': { nome: 'Luca Bianchi', tel: '393342345678' },
+};
+
+const MSG_TEMPLATE = `Ciao {NOME}, è arrivata la tua destinazione: {REPARTO}! 🎉
+Finalmente ci siamo. Spero che sia la destinazione che speravi, o almeno una che ti darà l'opportunità di crescere e fare bene.
+Da oggi fai parte di una realtà concreta e noi del SILP CGIL siamo lì con te. {SEGRETARIO_MSG}
+Nel frattempo se hai dubbi, domande o semplicemente vuoi capire cosa ti aspetta, scrivici senza pensarci.
+In bocca al lupo e benvenuto/a nella famiglia SILP CGIL. 🍀
+Il Coordinamento Nazionale SILP CGIL`;
+
+const WA_SVG = `<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>`;
+
+function normalizzaTel(tel) {
+  let t = String(tel || '').replace(/\s+/g,'').replace(/^\+/,'');
+  if(t.startsWith('39') && t.length > 11) return t;
+  if(t.startsWith('3')) return '39' + t;
+  return t;
+}
+
+function normalizzaNome(s) {
+  return String(s || '').trim().toUpperCase().replace(/\s+/g,' ');
+}
+
+function getInviati() {
+  try { return JSON.parse(localStorage.getItem(KEY_INVIATI) || '{}'); } catch(e) { return {}; }
+}
+
+function saveInviato(chiave, dest) {
+  const inv = getInviati();
+  inv[chiave] = { dest, ts: new Date().toLocaleString('it-IT') };
+  localStorage.setItem(KEY_INVIATI, JSON.stringify(inv));
+}
+
+function buildMsg(nome, reparto, provincia) {
+  const prov = normalizzaNome(provincia).split(' ')[0];
+  const seg = SEGRETARI[prov];
+  let segMsg = '';
+  if(seg && seg.nome) {
+    segMsg = `Presto verrai contattato/a da ${seg.nome}, Segretario provinciale SILP CGIL di ${prov.charAt(0)+prov.slice(1).toLowerCase()} (${seg.tel ? '+'+seg.tel : 'contatto in arrivo'}), o da un suo delegato, per farti conoscere la realtà del posto, le persone giuste e come muoverti fin dai primi giorni.`;
+  } else {
+    const provDisplay = prov.charAt(0) + prov.slice(1).toLowerCase();
+    segMsg = `Presto verrai contattato/a dalla segreteria provinciale SILP CGIL di ${provDisplay} o da un suo delegato, per farti conoscere la realtà del posto, le persone giuste e come muoverti fin dai primi giorni.`;
+  }
+  return encodeURIComponent(
+    MSG_TEMPLATE
+      .replace('{NOME}', nome)
+      .replace('{REPARTO}', reparto)
+      .replace('{SEGRETARIO_MSG}', segMsg)
+  );
+}
+
+function aggiornaProgress(allievi) {
+  const inv = getInviati();
+  const inviati = allievi.filter(a => inv[a.chiave]).length;
+  const conTel = allievi.filter(a => a.tel).length;
+  document.getElementById('progress').style.display = 'block';
+  document.getElementById('progress').textContent = `${inviati} / ${conTel} inviati (${allievi.length} totali, ${allievi.length - conTel} senza numero)`;
+  document.getElementById('totLabel').textContent = `${allievi.length} destinazioni caricate`;
+}
+
+let allAllievi = [];
+let contatti = {};
+
+function render() {
+  const lista = document.getElementById('lista');
+  const inv = getInviati();
+
+  // Raggruppa per scuola provenienza
+  const perScuola = {};
+  allAllievi.forEach(a => {
+    if(!perScuola[a.scuola]) perScuola[a.scuola] = [];
+    perScuola[a.scuola].push(a);
+  });
+
+  let html = '';
+  Object.keys(perScuola).sort().forEach(scuola => {
+    html += `<div class="scuola-label">${scuola}</div>`;
+    perScuola[scuola].forEach(a => {
+      const isInviato = !!inv[a.chiave];
+      const tel = a.tel;
+      const waLink = tel ? `https://wa.me/${tel}?text=${buildMsg(a.nome, a.reparto, a.provincia)}` : '';
+      const seg = SEGRETARI[(a.provincia || '').toUpperCase().split(' ')[0]];
+      const segInfo = seg ? `Segretario: ${seg.nome}` : `Segretario non ancora inserito`;
+
+      html += `<div class="card${isInviato ? ' inviato' : ''}" id="card_${a.chiave}">
+        <div class="info">
+          <div class="nome">${a.cognome} ${a.nome}</div>
+          <div class="dest">📍 ${a.reparto || '—'}</div>
+          <div class="segretario">🤝 ${segInfo}</div>
+          ${isInviato ? `<div class="data-invio">✓ Inviato il ${inv[a.chiave].ts}</div>` : ''}
+          ${!a.tel ? `<div class="no-match">⚠️ Numero non trovato nei contatti</div>` : ''}
+        </div>
+        ${!tel ? `
+          <input class="tel-input" type="tel" id="tel_${a.chiave}" placeholder="39XXXXXXXXXX"
+            oninput="abilitaBtn('${a.chiave}', this.value)">
+        ` : ''}
+        <a class="btn${isInviato ? ' inviato' : (!tel ? '' : '')}"
+          id="btn_${a.chiave}"
+          href="${waLink}"
+          target="_blank"
+          ${!tel ? 'disabled' : ''}
+          onclick="segna('${a.chiave}', '${a.reparto}', this, document.getElementById('card_${a.chiave}'))">
+          ${isInviato ? '✓ Inviato' : WA_SVG + ' Invia WA'}
+        </a>
+      </div>`;
+    });
+  });
+  lista.innerHTML = html;
+  aggiornaProgress(allAllievi);
+}
+
+function abilitaBtn(chiave, val) {
+  const tel = normalizzaTel(val);
+  const btn = document.getElementById('btn_' + chiave);
+  const a = allAllievi.find(x => x.chiave === chiave);
+  if(tel.length >= 11 && btn && a) {
+    btn.removeAttribute('disabled');
+    btn.href = `https://wa.me/${tel}?text=${buildMsg(a.nome, a.reparto, a.provincia)}`;
+    a.tel = tel;
+  } else if(btn) {
+    btn.setAttribute('disabled', true);
+  }
+}
+
+function segna(chiave, dest, btnEl, cardEl) {
+  setTimeout(function() {
+    saveInviato(chiave, dest);
+    btnEl.classList.add('inviato');
+    btnEl.innerHTML = '✓ Inviato';
+    cardEl.classList.add('inviato');
+    aggiornaProgress(allAllievi);
+  }, 800);
+}
+
+// Carica i contatti dal GAS
+function caricaContatti(callback) {
+  fetch(GAS_URL + '?action=getContatti')
+    .then(r => r.json())
+    .then(data => {
+      if(data.contatti) {
+        data.contatti.forEach(c => {
+          const chiave = normalizzaNome(c.cognome) + '|' + normalizzaNome(c.nome);
+          const chiaveSoloCognome = normalizzaNome(c.cognome);
+          const tel = normalizzaTel(c.tel);
+          if(tel) {
+            contatti[chiave] = tel;
+            contatti[chiaveSoloCognome] = tel; // fallback per cognome solo
+          }
+        });
+      }
+      callback();
+    })
+    .catch(() => callback());
+}
+
+function eliminaFile() {
+  if(!confirm('Elimini il file caricato? La lista verrà svuotata.')) return;
+  allAllievi = [];
+  document.getElementById('lista').innerHTML = '';
+  document.getElementById('progress').style.display = 'none';
+  document.getElementById('cambiaFileBox').style.display = 'none';
+  document.getElementById('uploadBox').style.display = 'block';
+  document.getElementById('fileInput').value = '';
+  document.getElementById('fileInput2').value = '';
+  document.getElementById('totLabel').textContent = 'Carica il file destinazioni';
+}
+
+// Gestisce entrambi i file input (primo caricamento e cambio file)
+function gestisciFile(file) {
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(ev) {
+    const wb = XLSX.read(ev.target.result, { type:'binary' });
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(ws, { header:1, defval:'' });
+
+    let headerRow = -1;
+    for(let i = 0; i < Math.min(rows.length, 10); i++) {
+      const r = rows[i].map(c => String(c).toUpperCase());
+      if(r.some(c => c.includes('COGNOME')) && r.some(c => c.includes('NOME'))) {
+        headerRow = i; break;
+      }
+    }
+    if(headerRow < 0) {
+      document.getElementById('lista').innerHTML = '<div class="errore">Intestazione non trovata. Il file deve avere colonne COGNOME, NOME, SCUOLA, ASSEGNATO C/O.</div>';
+      return;
+    }
+
+    const headers = rows[headerRow].map(c => String(c).toUpperCase().trim());
+    const iCognome = headers.findIndex(h => h.includes('COGNOME'));
+    const iNome = headers.findIndex(h => h.includes('NOME'));
+    const iScuola = headers.findIndex(h => h.includes('SCUOLA'));
+    const iAssegnato = headers.findIndex(h => h.includes('ASSEGNATO'));
+
+    allAllievi = [];
+    for(let i = headerRow + 1; i < rows.length; i++) {
+      const r = rows[i];
+      const cognome = normalizzaNome(r[iCognome]);
+      const nome = normalizzaNome(r[iNome]);
+      const scuola = String(r[iScuola] || '').trim() || 'SCUOLA NON INDICATA';
+      const reparto = String(r[iAssegnato] || '').trim();
+      if(!cognome && !nome) continue;
+      const parole = reparto.split(' ');
+      const provincia = parole[parole.length - 1] || '';
+      const chiave = cognome + '|' + nome;
+      const tel = contatti[chiave] || contatti[cognome] || '';
+      allAllievi.push({ cognome, nome, scuola, reparto, provincia, chiave, tel });
+    }
+
+    document.getElementById('uploadBox').style.display = 'none';
+    document.getElementById('cambiaFileBox').style.display = 'block';
+    render();
+  };
+  reader.readAsBinaryString(file);
+}
+
+document.getElementById('fileInput').addEventListener('change', function(e) {
+  gestisciFile(e.target.files[0]);
+});
+
+document.getElementById('fileInput2').addEventListener('change', function(e) {
+  gestisciFile(e.target.files[0]);
+});
+
+// Avvio: carica contatti dal GAS poi attende il file
+caricaContatti(function() {
+  console.log('Contatti caricati: ' + Object.keys(contatti).length / 2);
+});
+</script>
+</body>
+</html>
