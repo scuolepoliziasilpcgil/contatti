@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Destinazioni 233 SILP CGIL rev.11</title>
+<title>Destinazioni 233 SILP CGIL rev.12</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
@@ -307,7 +307,7 @@ input[type=file] { display:none; }
     </div>
   </div>
   <div class="header-right">
-    <span class="rev-tag">rev.11</span>
+    <span class="rev-tag">rev.12</span>
     <button class="icon-btn" id="settingsBtn" title="Modifica messaggio">&#9881;</button>
   </div>
 </header>
@@ -315,14 +315,20 @@ input[type=file] { display:none; }
 <!-- OVERLAY MODIFICA MESSAGGIO -->
 <div class="overlay" id="msgOverlay">
   <div class="panel">
-    <h2>&#9999;&#65039; Modifica messaggio WhatsApp</h2>
+    <h2>&#9999;&#65039; Impostazioni</h2>
+
+    <span class="field-label">Token GitHub (per condivisione file tra dispositivi)</span>
+    <input type="password" id="githubToken" placeholder="ghp_...">
+    <p style="font-size:.73rem; color:#888; margin-top:.3rem;">Il token viene salvato solo nel tuo browser. Serve per caricare i file su GitHub così gli altri li trovano già pronti. Lascia vuoto se non vuoi la condivisione.</p>
+
+    <hr style="border:none; border-top:1px solid #eee; margin:1rem 0;">
 
     <span class="field-label">Testo principale del messaggio</span>
     <textarea id="msgPrincipale" rows="7"></textarea>
 
     <span class="field-label">Frase del segretario provinciale</span>
     <textarea id="msgSegretario" rows="3"></textarea>
-    <p style="font-size:.73rem; color:#888; margin-top:.3rem;">Usa <code style="background:#f0f0f0; padding:.1rem .3rem; border-radius:4px;">[Provincia]</code>, <code style="background:#f0f0f0; padding:.1rem .3rem; border-radius:4px;">[Nome]</code> e <code style="background:#f0f0f0; padding:.1rem .3rem; border-radius:4px;">[Numero]</code> come segnaposto. Questa frase viene usata solo se il file segretari contiene i dati della provincia. Altrimenti viene usata la frase generica sotto.</p>
+    <p style="font-size:.73rem; color:#888; margin-top:.3rem;">Usa <code style="background:#f0f0f0; padding:.1rem .3rem; border-radius:4px;">[Provincia]</code>, <code style="background:#f0f0f0; padding:.1rem .3rem; border-radius:4px;">[Nome]</code> e <code style="background:#f0f0f0; padding:.1rem .3rem; border-radius:4px;">[Numero]</code> come segnaposto.</p>
 
     <span class="field-label">Frase generica (quando mancano i dati del segretario)</span>
     <textarea id="msgGenerica" rows="2"></textarea>
@@ -331,10 +337,10 @@ input[type=file] { display:none; }
     <input type="text" id="msgFirma">
 
     <div class="legenda">
-      <strong>Variabili disponibili nel testo principale:</strong><br>
+      <strong>Variabili nel testo principale:</strong><br>
       <code>{NOME}</code> &mdash; Nome dell'allievo<br>
       <code>{REPARTO}</code> &mdash; Reparto assegnato completo<br>
-      <code>{SEGRETARIO_MSG}</code> &mdash; Frase segretario (con dati reali o generica)<br>
+      <code>{SEGRETARIO_MSG}</code> &mdash; Frase segretario<br>
       <code>{FIRMA}</code> &mdash; La firma impostata sopra
     </div>
 
@@ -490,7 +496,16 @@ function getMsgSegretario() { return getMsg().segretario || DEFAULT_SEGRETARIO; 
 function getMsgGenerica() { return getMsg().generica || DEFAULT_GENERICA; }
 function getMsgFirma() { return getMsg().firma || DEFAULT_FIRMA; }
 
+var GITHUB_REPO = 'scuolepoliziasilpcgil/contatti';
+var GITHUB_FILE_DEST = 'data_destinazioni.json';
+var GITHUB_FILE_SEG  = 'data_segretari.json';
+var KEY_TOKEN = 'destino233_ghtoken';
+
+function getToken(){ return localStorage.getItem(KEY_TOKEN) || ''; }
+
 function salvaMsg() {
+  var token = document.getElementById('githubToken').value.trim();
+  if(token) localStorage.setItem(KEY_TOKEN, token);
   var m = {
     principale: document.getElementById('msgPrincipale').value.trim() || DEFAULT_PRINCIPALE,
     segretario: document.getElementById('msgSegretario').value.trim() || DEFAULT_SEGRETARIO,
@@ -499,22 +514,59 @@ function salvaMsg() {
   };
   localStorage.setItem(KEY_MSG, JSON.stringify(m));
   document.getElementById('msgOverlay').classList.remove('open');
-  if(allAllievi.length) render();
-}
-
-function resetMsg() {
-  if(!confirm('Ripristini tutti i testi originali?')) return;
-  localStorage.removeItem(KEY_MSG);
-  apriPannello();
-  if(allAllievi.length) render();
 }
 
 function apriPannello() {
+  document.getElementById('githubToken').value = getToken();
   document.getElementById('msgPrincipale').value = getMsgPrincipale();
   document.getElementById('msgSegretario').value = getMsgSegretario();
   document.getElementById('msgGenerica').value = getMsgGenerica();
   document.getElementById('msgFirma').value = getMsgFirma();
   document.getElementById('msgOverlay').classList.add('open');
+}
+
+// ── GITHUB API ───────────────────────────────────────────────
+async function githubGetSHA(filename) {
+  var token = getToken();
+  if(!token) return null;
+  try {
+    var r = await fetch('https://api.github.com/repos/' + GITHUB_REPO + '/contents/' + filename, {
+      headers: { 'Authorization': 'token ' + token, 'Accept': 'application/vnd.github.v3+json' }
+    });
+    if(r.status === 404) return '';
+    var d = await r.json();
+    return d.sha || '';
+  } catch(e) { return null; }
+}
+
+async function githubSave(filename, data) {
+  var token = getToken();
+  if(!token) return false;
+  try {
+    var sha = await githubGetSHA(filename);
+    if(sha === null) return false;
+    var content = btoa(unescape(encodeURIComponent(JSON.stringify(data))));
+    var body = { message: 'Aggiornamento ' + filename, content: content };
+    if(sha) body.sha = sha;
+    var r = await fetch('https://api.github.com/repos/' + GITHUB_REPO + '/contents/' + filename, {
+      method: 'PUT',
+      headers: {
+        'Authorization': 'token ' + token,
+        'Accept': 'application/vnd.github.v3+json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(body)
+    });
+    return r.ok;
+  } catch(e) { return false; }
+}
+
+async function githubLoad(filename) {
+  try {
+    var r = await fetch('https://raw.githubusercontent.com/' + GITHUB_REPO + '/main/' + filename + '?t=' + Date.now());
+    if(!r.ok) return null;
+    return await r.json();
+  } catch(e) { return null; }
 }
 
 document.getElementById('settingsBtn').addEventListener('click', apriPannello);
@@ -705,6 +757,16 @@ function processaFileDestinazioni(file) {
     document.getElementById('uploadBox').style.display = 'none';
     document.getElementById('toolbar').classList.add('visible');
     render();
+
+    // Salva su GitHub se token disponibile
+    if(getToken()) {
+      document.getElementById('gasStatus').textContent = 'Salvataggio su GitHub\u2026';
+      githubSave(GITHUB_FILE_DEST, allAllievi).then(function(ok) {
+        document.getElementById('gasStatus').textContent = ok
+          ? '\u2713 File destinazioni salvato su GitHub. Gli altri possono aggiornare la pagina.'
+          : '\u26A0\uFE0F Salvataggio GitHub fallito. Controlla il token nel pannello \u2699\uFE0F';
+      });
+    }
     } catch(err) {
       document.getElementById('lista').innerHTML = '<div class="errore">Errore lettura file: ' + err.message + '</div>';
     }
@@ -782,6 +844,14 @@ document.getElementById('fileSegretari').addEventListener('change', function(e) 
         : '\u26A0\uFE0F Nessun segretario trovato. Chiavi: ' + (jsonRows.length > 0 ? Object.keys(jsonRows[0]).join(', ') : 'file vuoto');
       document.getElementById('eliminaSegBtn').style.display = 'inline-block';
       if(allAllievi.length) render();
+
+      // Salva su GitHub se token disponibile
+      if(trovati > 0 && getToken()) {
+        githubSave(GITHUB_FILE_SEG, SEGRETARI).then(function(ok) {
+          if(!ok) document.getElementById('segretariStatus').textContent += ' \u2014 \u26A0\uFE0F salvataggio GitHub fallito';
+          else document.getElementById('segretariStatus').textContent += ' \u2014 \u2713 salvati su GitHub';
+        });
+      }
     } catch(err) {
       document.getElementById('segretariStatus').textContent = '\u26A0\uFE0F Errore: ' + err.message;
     }
@@ -798,8 +868,9 @@ function eliminaSegretari() {
   if(allAllievi.length) render();
 }
 
-// ── CARICA CONTATTI DAL GAS ──────────────────────────────────
+// ── AVVIO: carica contatti GAS e poi dati da GitHub ──────────
 document.getElementById('segretariStatus').textContent = 'Nessun file caricato \u2014 verr\u00e0 usata la frase generica';
+
 fetch(GAS_URL + '?action=getContatti')
   .then(function(r) { return r.json(); })
   .then(function(data) {
@@ -809,19 +880,42 @@ fetch(GAS_URL + '?action=getContatti')
         var tel = normalizzaTel(c.tel);
         if(!tel || visti[tel]) return;
         visti[tel] = true;
-        var chiave = normalizzaNome(c.cognome) + '|' + normalizzaNome(c.nome);
-        var soloCognome = normalizzaNome(c.cognome);
-        contatti[chiave] = tel;
-        contatti[soloCognome] = tel;
+        contatti[normalizzaNome(c.cognome) + '|' + normalizzaNome(c.nome)] = tel;
+        contatti[normalizzaNome(c.cognome)] = tel;
       });
       var nContatti = Object.keys(visti).length;
-      document.getElementById('gasStatus').textContent = '\u2713 ' + nContatti + ' contatti caricati. Ora carica il file destinazioni.';
+      document.getElementById('gasStatus').textContent = '\u2713 ' + nContatti + ' contatti caricati.';
+
+      // Carica destinazioni da GitHub
+      githubLoad(GITHUB_FILE_DEST).then(function(dest) {
+        if(dest && dest.length) {
+          allAllievi = dest.map(function(a) {
+            return Object.assign({}, a, { tel: contatti[a.cognome+'|'+a.nome] || contatti[a.cognome] || a.tel || '' });
+          });
+          document.getElementById('uploadBox').style.display = 'none';
+          document.getElementById('toolbar').classList.add('visible');
+          document.getElementById('gasStatus').textContent = '\u2713 ' + nContatti + ' contatti caricati \u2014 \u2713 ' + allAllievi.length + ' destinazioni da GitHub.';
+          render();
+        } else {
+          document.getElementById('gasStatus').textContent = '\u2713 ' + nContatti + ' contatti caricati. Ora carica il file destinazioni.';
+        }
+      });
+
+      // Carica segretari da GitHub
+      githubLoad(GITHUB_FILE_SEG).then(function(seg) {
+        if(seg && Object.keys(seg).length) {
+          Object.assign(SEGRETARI, seg);
+          document.getElementById('segretariStatus').textContent = '\u2713 ' + Object.keys(seg).length + ' segretari da GitHub';
+          document.getElementById('eliminaSegBtn').style.display = 'inline-block';
+          if(allAllievi.length) render();
+        }
+      });
     } else {
-      document.getElementById('gasStatus').textContent = '\u26A0\uFE0F Errore caricamento contatti: ' + JSON.stringify(data);
+      document.getElementById('gasStatus').textContent = '\u26A0\uFE0F Errore: ' + JSON.stringify(data);
     }
   })
   .catch(function(err) {
-    document.getElementById('gasStatus').textContent = '\u26A0\uFE0F Connessione al backend fallita: ' + err.message;
+    document.getElementById('gasStatus').textContent = '\u26A0\uFE0F Backend non raggiunto: ' + err.message;
   });
 </script>
 </body>
