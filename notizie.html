@@ -327,7 +327,7 @@ header {
     </div>
   </div>
   <div class="header-right">
-    <span class="rev-tag">rev.9</span>
+    <span class="rev-tag">rev.10</span>
     <button class="icon-btn" id="settingsBtn" title="Scrivi la comunicazione" style="display:none;">&#9881;</button>
   </div>
 </header>
@@ -382,6 +382,7 @@ header {
   <button class="tab-btn active" id="tab_invia" onclick="cambiaVista('invia')">&#128172; Invia messaggi</button>
   <button class="tab-btn" id="tab_registro" onclick="cambiaVista('registro')">&#128214; Registro invii</button>
   <button class="tab-btn" id="tab_codici" onclick="cambiaVista('codici')">&#128273; Codici scuole</button>
+  <button class="tab-btn" onclick="riparaDatiLegacy()">&#128295; Ripara dati vecchi</button>
 </div>
 
 <!-- OVERLAY STORICO ALLIEVO -->
@@ -444,6 +445,13 @@ async function fbSet(path, data) {
     var errBody = '';
     try { var j = await r.json(); errBody = j.error || ''; } catch(e2) {}
     return { ok:false, detail:'HTTP ' + r.status + (errBody ? ' \u2014 ' + errBody : '') };
+  } catch(e) { return { ok:false, detail:'errore di rete: ' + e.message }; }
+}
+
+async function fbDelete(path) {
+  try {
+    var r = await fetch(FIREBASE_DB + '/' + path + '.json', { method: 'DELETE' });
+    return { ok: r.ok };
   } catch(e) { return { ok:false, detail:'errore di rete: ' + e.message }; }
 }
 
@@ -776,8 +784,11 @@ function mostraAccessoNegato() {
 async function caricaRegistro() {
   var base = (corsoSelezionato === 'attivo') ? FB_PATH_INVII_BASE : ('qiv2/archivio/' + corsoSelezionato + '/notizie/invii');
   var tutteLeScuole = await fbGet(base) || {};
+  var scuoleValide = {};
+  contattiList.forEach(function(c) { scuoleValide[chiaveScuolaFirebase(c.scuola || 'SCUOLA NON INDICATA')] = true; });
   var perAllievo = {};
   Object.keys(tutteLeScuole).forEach(function(scuolaKey) {
+    if(!scuoleValide[scuolaKey]) return; // salta chiavi legacy/mal formate a questo livello
     var gruppiHash = tutteLeScuole[scuolaKey] || {};
     Object.keys(gruppiHash).forEach(function(hash) {
       var gruppo = gruppiHash[hash] || {};
@@ -789,6 +800,44 @@ async function caricaRegistro() {
     });
   });
   return perAllievo;
+}
+
+// ── RIPARAZIONE DATI SALVATI COL VECCHIO SCHEMA (senza livello scuola) ──
+async function riparaDatiLegacy() {
+  var tutto = await fbGet(FB_PATH_INVII_BASE) || {};
+  var scuoleValide = {};
+  contattiList.forEach(function(c) { scuoleValide[chiaveScuolaFirebase(c.scuola || 'SCUOLA NON INDICATA')] = true; });
+
+  var daMigrare = [];
+  Object.keys(tutto).forEach(function(k) {
+    if(scuoleValide[k]) return; // già a posto
+    var possibileGruppo = tutto[k];
+    if(!possibileGruppo || typeof possibileGruppo !== 'object') return;
+    Object.keys(possibileGruppo).forEach(function(chiave) {
+      var rec = possibileGruppo[chiave];
+      if(rec && typeof rec === 'object' && rec.scuola && rec.testo) {
+        daMigrare.push({ hashVecchio: k, chiave: chiave, record: rec });
+      }
+    });
+  });
+
+  if(!daMigrare.length) {
+    alert('Nessun dato in formato vecchio trovato, tutto in ordine.');
+    return;
+  }
+  if(!confirm('Trovati ' + daMigrare.length + ' invii salvati in un formato precedente. Li sposto nella posizione corretta?')) return;
+
+  for(var i = 0; i < daMigrare.length; i++) {
+    var d = daMigrare[i];
+    var scuolaKey = chiaveScuolaFirebase(d.record.scuola);
+    await fbSet(FB_PATH_INVII_BASE + '/' + scuolaKey + '/' + d.hashVecchio + '/' + d.chiave, d.record);
+  }
+  var vecchiHash = Array.from(new Set(daMigrare.map(function(d) { return d.hashVecchio; })));
+  for(var j = 0; j < vecchiHash.length; j++) {
+    await fbDelete(FB_PATH_INVII_BASE + '/' + vecchiHash[j]);
+  }
+  alert('Riparazione completata: ' + daMigrare.length + ' invii spostati nella posizione corretta.');
+  if(vistaAdmin === 'registro') renderRegistro();
 }
 
 async function renderRegistro() {
