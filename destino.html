@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Destinazioni 233 SILP CGIL rev.17</title>
+<title>Destinazioni 233 SILP CGIL rev.18</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
@@ -311,7 +311,7 @@ input[type=file] { display:none; }
     </div>
   </div>
   <div class="header-right">
-    <span class="rev-tag">rev.17</span>
+    <span class="rev-tag">rev.18</span>
     <button class="icon-btn" id="settingsBtn" title="Modifica messaggio">&#9881;</button>
   </div>
 </header>
@@ -593,11 +593,11 @@ async function githubLoad(filename) {
 
 async function githubDelete(filename) {
   var token = getToken();
-  if(!token) return false;
+  if(!token) return { ok:false, detail:'nessun token salvato' };
   try {
     var sha = await githubGetSHA(filename);
-    if(sha === null) return false;
-    if(!sha) return true;
+    if(sha === null) return { ok:false, detail:'errore di rete durante la lettura dello sha' };
+    if(!sha) return { ok:true, detail:'file gi\u00e0 assente su GitHub' };
     var r = await fetch('https://api.github.com/repos/' + GITHUB_REPO + '/contents/' + filename, {
       method: 'DELETE',
       headers: {
@@ -607,8 +607,11 @@ async function githubDelete(filename) {
       },
       body: JSON.stringify({ message: 'Eliminazione ' + filename, sha: sha })
     });
-    return r.ok;
-  } catch(e) { return false; }
+    if(r.ok) return { ok:true, detail:'' };
+    var errBody = '';
+    try { var j = await r.json(); errBody = j.message || ''; } catch(e2) {}
+    return { ok:false, detail:'HTTP ' + r.status + (errBody ? ' \u2014 ' + errBody : '') };
+  } catch(e) { return { ok:false, detail:'errore di rete: ' + e.message }; }
 }
 
 document.getElementById('settingsBtn').addEventListener('click', apriPannello);
@@ -832,10 +835,10 @@ async function eliminaFile() {
   document.getElementById('fileInput').value = '';
   document.getElementById('gasStatus').textContent = 'Eliminazione in corso\u2026';
 
-  var ok = await githubDelete(GITHUB_FILE_DEST);
-  document.getElementById('gasStatus').textContent = ok
+  var res = await githubDelete(GITHUB_FILE_DEST);
+  document.getElementById('gasStatus').textContent = res.ok
     ? 'File eliminato. Carica il nuovo file destinazioni.'
-    : 'File eliminato localmente, ma la cancellazione su GitHub non \u00e8 riuscita. Verifica il token nelle impostazioni.';
+    : 'File eliminato localmente, ma la cancellazione su GitHub non \u00e8 riuscita (' + res.detail + ').';
 }
 
 // ── CARICA FILE SEGRETARI ────────────────────────────────────
@@ -916,10 +919,10 @@ async function eliminaSegretari() {
   if(allAllievi.length) render();
   document.getElementById('segretariStatus').textContent = 'Eliminazione in corso\u2026';
 
-  var ok = await githubDelete(GITHUB_FILE_SEG);
-  document.getElementById('segretariStatus').textContent = ok
+  var res = await githubDelete(GITHUB_FILE_SEG);
+  document.getElementById('segretariStatus').textContent = res.ok
     ? 'Nessun file caricato \u2014 verr\u00e0 usata la frase generica'
-    : 'Nessun file caricato \u2014 verr\u00e0 usata la frase generica (cancellazione su GitHub non riuscita, verifica il token)';
+    : 'Nessun file caricato \u2014 verr\u00e0 usata la frase generica (cancellazione su GitHub non riuscita: ' + res.detail + ')';
 }
 
 // ── AVVIO: carica contatti GAS e poi dati da GitHub ──────────
