@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Destinazioni 233 SILP CGIL rev.20</title>
+<title>Destinazioni 233 SILP CGIL rev.21</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
@@ -311,7 +311,7 @@ input[type=file] { display:none; }
     </div>
   </div>
   <div class="header-right">
-    <span class="rev-tag">rev.20</span>
+    <span class="rev-tag">rev.21</span>
     <button class="icon-btn" id="settingsBtn" title="Modifica messaggio">&#9881;</button>
   </div>
 </header>
@@ -325,6 +325,7 @@ input[type=file] { display:none; }
     <div style="display:flex; gap:.5rem; align-items:center; margin-bottom:.3rem;">
       <input type="password" id="githubToken" placeholder="ghp_..." style="flex:1;">
       <button class="primary-btn" onclick="salvaToken()" style="white-space:nowrap;">Salva token</button>
+      <button class="ghost-btn" onclick="rimuoviToken()" style="white-space:nowrap;">Rimuovi token</button>
     </div>
     <p style="font-size:.73rem; color:#888; margin-bottom:.5rem;">Serve solo al dispositivo che carica i file. Gli altri leggono automaticamente senza token. Il token rimane salvato nel tuo browser.</p>
 
@@ -406,6 +407,7 @@ var SEGRETARI = {};
 var allAllievi = [];
 var contatti = {};
 var KEY_MSG = 'destino233_msg';
+var contattiCaricati = 0;
 
 // ── MAPPA PROVINCIA -> REGIONE per fallback segretario regionale ──
 var PROVINCIA_REGIONE = {
@@ -520,11 +522,22 @@ function salvaToken() {
   var token = document.getElementById('githubToken').value.trim();
   if(token) {
     localStorage.setItem(KEY_TOKEN, token);
-    alert('\u2713 Token salvato. Ora puoi caricare i file.');
+    document.getElementById('githubToken').value = '';
+    document.getElementById('githubToken').placeholder = 'Token salvato (\u2022\u2022\u2022\u2022' + token.slice(-4) + ') \u2014 lascia vuoto per non cambiarlo';
+    alert('\u2713 Token salvato.');
+  } else if(getToken()) {
+    alert('Campo vuoto: il token salvato in precedenza non \u00e8 stato modificato. Per rimuoverlo usa "Rimuovi token".');
   } else {
-    localStorage.removeItem(KEY_TOKEN);
-    alert('Token rimosso.');
+    alert('Nessun token inserito.');
   }
+}
+
+function rimuoviToken() {
+  if(!confirm('Rimuovere il token GitHub salvato?')) return;
+  localStorage.removeItem(KEY_TOKEN);
+  document.getElementById('githubToken').value = '';
+  document.getElementById('githubToken').placeholder = 'ghp_...';
+  alert('Token rimosso.');
 }
 
 function salvaMsg() {
@@ -539,7 +552,11 @@ function salvaMsg() {
 }
 
 function apriPannello() {
-  document.getElementById('githubToken').value = getToken();
+  var saved = getToken();
+  document.getElementById('githubToken').value = '';
+  document.getElementById('githubToken').placeholder = saved
+    ? ('Token salvato (\u2022\u2022\u2022\u2022' + saved.slice(-4) + ') \u2014 lascia vuoto per non cambiarlo')
+    : 'ghp_...';
   document.getElementById('msgPrincipale').value = getMsgPrincipale();
   document.getElementById('msgSegretario').value = getMsgSegretario();
   document.getElementById('msgGenerica').value = getMsgGenerica();
@@ -851,9 +868,10 @@ async function eliminaFile() {
   document.getElementById('gasStatus').textContent = 'Eliminazione in corso\u2026';
 
   var res = await githubDelete(GITHUB_FILE_DEST);
+  var prefisso = contattiCaricati ? ('\u2713 ' + contattiCaricati + ' contatti caricati. ') : '';
   document.getElementById('gasStatus').textContent = res.ok
-    ? 'File eliminato. Carica il nuovo file destinazioni.'
-    : 'File eliminato localmente, ma la cancellazione su GitHub non \u00e8 riuscita (' + res.detail + ').';
+    ? (prefisso + 'File eliminato. Carica il nuovo file destinazioni.')
+    : (prefisso + 'File eliminato localmente, ma la cancellazione su GitHub non \u00e8 riuscita (' + res.detail + ').');
 }
 
 // ── CARICA FILE SEGRETARI ────────────────────────────────────
@@ -979,6 +997,7 @@ function fetchContattiConRetry(tentativo) {
           contatti[normalizzaNome(c.cognome)] = tel;
         });
         var nContatti = Object.keys(visti).length;
+        contattiCaricati = nContatti;
         document.getElementById('gasStatus').textContent = '\u2713 ' + nContatti + ' contatti caricati.';
 
         // Carica segretari da GitHub
