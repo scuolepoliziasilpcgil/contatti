@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Destinazioni 233 SILP CGIL rev.12</title>
+<title>Destinazioni 233 SILP CGIL rev.13</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
@@ -286,6 +286,10 @@ input[type=file] { display:none; }
   font-weight:700;
   cursor:pointer;
 }
+.spinner-box { background:#fff; border-radius:10px; padding:2.5rem 1.4rem; margin-bottom:1rem; text-align:center; }
+.spinner { width:2.5rem; height:2.5rem; border:3px solid #e0ecf8; border-top-color:#005CA9; border-radius:50%; animation:spin .8s linear infinite; margin:0 auto .8rem; }
+@keyframes spin { to { transform:rotate(360deg); } }
+.spinner-label { font-size:.88rem; color:#666; }
 .errore {
   background:#fdecea;
   color:#c0392b;
@@ -307,7 +311,7 @@ input[type=file] { display:none; }
     </div>
   </div>
   <div class="header-right">
-    <span class="rev-tag">rev.12</span>
+    <span class="rev-tag">rev.13</span>
     <button class="icon-btn" id="settingsBtn" title="Modifica messaggio">&#9881;</button>
   </div>
 </header>
@@ -352,8 +356,14 @@ input[type=file] { display:none; }
   </div>
 </div>
 
+<!-- SPINNER ATTESA CARICAMENTO -->
+<div class="spinner-box" id="spinnerBox">
+  <div class="spinner"></div>
+  <div class="spinner-label">Caricamento dati in corso&hellip;</div>
+</div>
+
 <!-- UPLOAD FILE DESTINAZIONI -->
-<div class="upload-box" id="uploadBox">
+<div class="upload-box" id="uploadBox" style="display:none;">
   <h2>Carica il file Excel con le destinazioni</h2>
   <p>Il file deve avere le colonne: COGNOME, NOME, SCUOLA, ASSEGNATO C/O</p>
   <p id="gasStatus" style="font-size:.78rem; color:#005CA9; margin-bottom:.5rem;"></p>
@@ -500,8 +510,9 @@ var GITHUB_REPO = 'scuolepoliziasilpcgil/contatti';
 var GITHUB_FILE_DEST = 'data_destinazioni.json';
 var GITHUB_FILE_SEG  = 'data_segretari.json';
 var KEY_TOKEN = 'destino233_ghtoken';
+var GITHUB_TOKEN_DEFAULT = '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';
 
-function getToken(){ return localStorage.getItem(KEY_TOKEN) || ''; }
+function getToken(){ return localStorage.getItem(KEY_TOKEN) || GITHUB_TOKEN_DEFAULT; }
 
 function salvaMsg() {
   var token = document.getElementById('githubToken').value.trim();
@@ -871,6 +882,15 @@ function eliminaSegretari() {
 // ── AVVIO: carica contatti GAS e poi dati da GitHub ──────────
 document.getElementById('segretariStatus').textContent = 'Nessun file caricato \u2014 verr\u00e0 usata la frase generica';
 
+function nascondiSpinner() {
+  document.getElementById('spinnerBox').style.display = 'none';
+}
+
+function mostraUpload() {
+  nascondiSpinner();
+  document.getElementById('uploadBox').style.display = 'block';
+}
+
 fetch(GAS_URL + '?action=getContatti')
   .then(function(r) { return r.json(); })
   .then(function(data) {
@@ -886,35 +906,38 @@ fetch(GAS_URL + '?action=getContatti')
       var nContatti = Object.keys(visti).length;
       document.getElementById('gasStatus').textContent = '\u2713 ' + nContatti + ' contatti caricati.';
 
-      // Carica destinazioni da GitHub
-      githubLoad(GITHUB_FILE_DEST).then(function(dest) {
-        if(dest && dest.length) {
-          allAllievi = dest.map(function(a) {
-            return Object.assign({}, a, { tel: contatti[a.cognome+'|'+a.nome] || contatti[a.cognome] || a.tel || '' });
-          });
-          document.getElementById('uploadBox').style.display = 'none';
-          document.getElementById('toolbar').classList.add('visible');
-          document.getElementById('gasStatus').textContent = '\u2713 ' + nContatti + ' contatti caricati \u2014 \u2713 ' + allAllievi.length + ' destinazioni da GitHub.';
-          render();
-        } else {
-          document.getElementById('gasStatus').textContent = '\u2713 ' + nContatti + ' contatti caricati. Ora carica il file destinazioni.';
-        }
-      });
-
       // Carica segretari da GitHub
       githubLoad(GITHUB_FILE_SEG).then(function(seg) {
         if(seg && Object.keys(seg).length) {
           Object.assign(SEGRETARI, seg);
           document.getElementById('segretariStatus').textContent = '\u2713 ' + Object.keys(seg).length + ' segretari da GitHub';
           document.getElementById('eliminaSegBtn').style.display = 'inline-block';
-          if(allAllievi.length) render();
         }
       });
+
+      // Carica destinazioni da GitHub
+      githubLoad(GITHUB_FILE_DEST).then(function(dest) {
+        if(dest && dest.length) {
+          allAllievi = dest.map(function(a) {
+            return Object.assign({}, a, { tel: contatti[a.cognome+'|'+a.nome] || contatti[a.cognome] || a.tel || '' });
+          });
+          nascondiSpinner();
+          document.getElementById('uploadBox').style.display = 'none';
+          document.getElementById('toolbar').classList.add('visible');
+          document.getElementById('gasStatus').textContent = '\u2713 ' + nContatti + ' contatti \u2014 \u2713 ' + allAllievi.length + ' destinazioni da GitHub.';
+          render();
+        } else {
+          mostraUpload();
+          document.getElementById('gasStatus').textContent = '\u2713 ' + nContatti + ' contatti caricati. Ora carica il file destinazioni.';
+        }
+      }).catch(function(){ mostraUpload(); });
     } else {
+      mostraUpload();
       document.getElementById('gasStatus').textContent = '\u26A0\uFE0F Errore: ' + JSON.stringify(data);
     }
   })
   .catch(function(err) {
+    mostraUpload();
     document.getElementById('gasStatus').textContent = '\u26A0\uFE0F Backend non raggiunto: ' + err.message;
   });
 </script>
