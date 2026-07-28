@@ -384,7 +384,61 @@ var GAS_URL = 'https://script.google.com/macros/s/AKfycbxsD7KImUy2Xa9egcfWmroGzo
 var KEY_INVIATI = 'destino233_inviati';
 var KEY_MSG = 'destino233_msg';
 
-var SEGRETARI = {};
+// ── PROVINCE NOTE DAL FILE POSTI 233° ───────────────────────
+// Mappa parole chiave nei nomi reparto -> provincia SILP
+var PROVINCE_MAP = {
+  'ALESSANDRIA':'ALESSANDRIA','ANCONA':'ANCONA','AOSTA':'AOSTA',
+  'AREZZO':'AREZZO','ASTI':'ASTI','AVELLINO':'AVELLINO','BARI':'BARI',
+  'BELLUNO':'BELLUNO','BENEVENTO':'BENEVENTO','BERGAMO':'BERGAMO',
+  'BIELLA':'BIELLA','BOLOGNA':'BOLOGNA','BOLZANO':'BOLZANO',
+  'BRESCIA':'BRESCIA','CAGLIARI':'CAGLIARI','COMO':'COMO',
+  'COSENZA':'COSENZA','CREMONA':'CREMONA','CROTONE':'CROTONE',
+  'CUNEO':'CUNEO','FERMO':'FERMO','FERRARA':'FERRARA',
+  'FIRENZE':'FIRENZE','FOGGIA':'FOGGIA','FROSINONE':'FROSINONE',
+  'GENOVA':'GENOVA','GORIZIA':'GORIZIA','GROSSETO':'GROSSETO',
+  'IMPERIA':'IMPERIA','AQUILA':"L'AQUILA",'SPEZIA':'LA SPEZIA',
+  'LATINA':'LATINA','LECCE':'LECCE','LECCO':'LECCO',
+  'LIVORNO':'LIVORNO','LODI':'LODI','LUCCA':'LUCCA',
+  'MACERATA':'MACERATA','MANTOVA':'MANTOVA','MASSA':'MASSA CARRARA',
+  'MESSINA':'MESSINA','MILANO':'MILANO','MODENA':'MODENA',
+  'MONZA':'MONZA-BRIANZA','BRIANZA':'MONZA-BRIANZA',
+  'NAPOLI':'NAPOLI','NOVARA':'NOVARA','NUORO':'NUORO',
+  'PADOVA':'PADOVA','PALERMO':'PALERMO','PARMA':'PARMA',
+  'PAVIA':'PAVIA','PERUGIA':'PERUGIA','PESARO':'PESARO - URBINO',
+  'PIACENZA':'PIACENZA','PISA':'PISA','PISTOIA':'PISTOIA',
+  'PORDENONE':'PORDENONE','POTENZA':'POTENZA','PRATO':'PRATO',
+  'RAVENNA':'RAVENNA','REGGIO':'REGGIO CALABRIA',  // default Calabria, override sotto
+  'RIETI':'RIETI','RIMINI':'RIMINI','ROMA':'ROMA',
+  'ROVIGO':'ROVIGO','SALERNO':'SALERNO','SASSARI':'SASSARI',
+  'SAVONA':'SAVONA','SIENA':'SIENA','SIRACUSA':'SIRACUSA',
+  'SONDRIO':'SONDRIO','TARANTO':'TARANTO','TERAMO':'TERAMO',
+  'TERNI':'TERNI','TORINO':'TORINO','TRAPANI':'TRAPANI',
+  'TRENTO':'TRENTO','TREVISO':'TREVISO','TRIESTE':'TRIESTE',
+  'UDINE':'UDINE','VARESE':'VARESE','VENEZIA':'VENEZIA',
+  'VERBANIA':'VERBANIA','VERCELLI':'VERCELLI','VERONA':'VERONA',
+  'VIBO':'VIBO VALENTIA','VICENZA':'VICENZA','VITERBO':'VITERBO',
+  // override Reggio
+  'EMILIA':'REGGIO EMILIA','CALABRIA':'REGGIO CALABRIA',
+  'CAGLIARI':'CAGLIARI','FORL':'FORLI\' - CESENA',
+};
+
+function estraiProvincia(reparto) {
+  var r = reparto.toUpperCase();
+  // Cerca prima match esatto con chiavi lunghe (es. REGGIO CALABRIA)
+  var chiavi = Object.keys(PROVINCE_MAP).sort(function(a,b){ return b.length - a.length; });
+  for(var i = 0; i < chiavi.length; i++) {
+    if(r.indexOf(chiavi[i]) >= 0) return PROVINCE_MAP[chiavi[i]];
+  }
+  // Fallback: prima parola significativa
+  var parole = r.split(/[\s,\.]+/).filter(function(p){
+    return p.length > 2 && ['QUESTURA','DI','COMMISSARIATO','POLIZIA','STRADALE',
+      'FERROVIARIA','POSTALE','SCIENTIFICA','MOBILE','REPARTO','UFFICIO',
+      'SQUADRA','CENTRO','SUD','NORD','EST','OVEST','P','S','PS',
+      'COMPARTIMENTO','COMP','SEZIONE','SEZIONI','OPERATIVE','INTERNE',
+      'SOTTOSEZIONE','AUTOSTRADALE','DISTACCAMENTO','ZONA','FRONTIERA'].indexOf(p) < 0;
+  });
+  return parole.length ? parole[0] : '';
+}
 var allAllievi = [];
 var contatti = {};
 
@@ -445,8 +499,8 @@ function normalizzaNome(s) {
 }
 
 function buildMsg(nome, reparto, provincia) {
-  var provKey = normalizzaNome(provincia).split(' ').pop();
-  var seg = SEGRETARI[provKey] || SEGRETARI[normalizzaNome(provincia)];
+  var provKey = (provincia || estraiProvincia(reparto)).toUpperCase();
+  var seg = SEGRETARI[provKey];
   var segFrase;
   if(seg && seg.nome) {
     segFrase = getMsgSegretario()
@@ -531,8 +585,8 @@ function render() {
     perScuola[scuola].forEach(function(a) {
       var isInviato = !!inv[a.chiave];
       var tel = a.tel;
-      var provKey = normalizzaNome(a.provincia).split(' ').pop();
-      var seg = SEGRETARI[provKey] || SEGRETARI[normalizzaNome(a.provincia)];
+      var provKey = (a.provincia || estraiProvincia(a.reparto)).toUpperCase();
+      var seg = SEGRETARI[provKey];
       var segInfo = seg && seg.nome ? ('Segretario: ' + seg.nome + (seg.tel ? ' \u2022 +' + seg.tel : '')) : 'Segretario non ancora inserito';
       var waLink = tel ? ('https://wa.me/' + tel + '?text=' + buildMsg(a.nome, a.reparto, a.provincia)) : '';
       var safeChiave = a.chiave.replace(/'/g, "\\'");
@@ -601,8 +655,7 @@ function processaFileDestinazioni(file) {
       if(!cognome && !nome) continue;
       var scuola  = String(row[iScuola] || '').trim() || 'SCUOLA NON INDICATA';
       var reparto = String(row[iAssegnato >= 0 ? iAssegnato : iAssegnato] || '').trim();
-      var parole  = reparto.split(/[\s,]+/);
-      var provincia = parole[parole.length - 1] || '';
+      var provincia = estraiProvincia(reparto);
       var chiave  = (cognome + '_' + nome).replace(/[^A-Z0-9_]/g,'');
       var tel     = contatti[cognome + '|' + nome] || contatti[cognome] || '';
       allAllievi.push({ cognome:cognome, nome:nome, scuola:scuola, reparto:reparto, provincia:provincia, chiave:chiave, tel:tel });
