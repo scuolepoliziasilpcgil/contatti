@@ -3,7 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Notizie 233 SILP CGIL rev.5</title>
+<title>Notizie 233 SILP CGIL rev.6</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="icon" type="image/x-icon" href="favicon.ico">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
@@ -324,7 +327,7 @@ header {
     </div>
   </div>
   <div class="header-right">
-    <span class="rev-tag">rev.5</span>
+    <span class="rev-tag">rev.6</span>
     <button class="icon-btn" id="settingsBtn" title="Scrivi la comunicazione" style="display:none;">&#9881;</button>
   </div>
 </header>
@@ -397,7 +400,7 @@ header {
 <!-- LISTA ALLIEVI -->
 <div id="lista" style="display:none;"></div>
 
-<script>var TITLE_TEMPLATE = 'Notizie {CORSO} SILP CGIL rev.5';</script>
+<script>var TITLE_TEMPLATE = 'Notizie {CORSO} SILP CGIL rev.6';</script>
 <script src="corso-config.js"></script>
 <script>
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbxsD7KImUy2Xa9egcfWmroGzoO1DEaHZwLt4Khocc4DOtAfGmSpPRrYUWufknSeV5fgoQ/exec';
@@ -1004,6 +1007,7 @@ async function avvia() {
   } else {
     scuolaFiltro = SCUOLA_ASSEGNATA;
     document.getElementById('settingsBtn').style.display = 'flex';
+    document.title = document.title + ' \u00b7 ' + SCUOLA_ASSEGNATA;
   }
 
   await caricaTestiEInvii();
