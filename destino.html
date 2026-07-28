@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Destinazioni 233 SILP CGIL rev.23</title>
+<title>Destinazioni 233 SILP CGIL rev.24</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
@@ -311,7 +311,7 @@ input[type=file] { display:none; }
     </div>
   </div>
   <div class="header-right">
-    <span class="rev-tag">rev.23</span>
+    <span class="rev-tag">rev.24</span>
     <button class="icon-btn" id="settingsBtn" title="Modifica messaggio">&#9881;</button>
   </div>
 </header>
@@ -526,8 +526,8 @@ function apriPannello() {
 
 // ── FIREBASE REALTIME DATABASE (progetto quizassegnazioni, regole aperte) ──
 var FIREBASE_DB = 'https://quizassegnazioni-default-rtdb.europe-west1.firebasedatabase.app';
-var FB_PATH_DEST = 'destino233/destinazioni';
-var FB_PATH_SEG  = 'destino233/segretari';
+var FB_PATH_DEST = 'qiv2/destino233/destinazioni';
+var FB_PATH_SEG  = 'qiv2/destino233/segretari';
 
 async function fbSet(path, data) {
   try {
