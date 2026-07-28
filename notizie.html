@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Notizie 233 SILP CGIL rev.2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --blu:#005CA9;
+  --verde:#25D366;
+  --rosso:#C8102E;
+  --grigio:#bbb;
+  --sfondo:#f0f2f5;
+  --crema:#F7F3E8;
+}
+* { box-sizing:border-box; margin:0; padding:0; }
+body { font-family:'Inter',sans-serif; background:var(--sfondo); padding:1rem; }
+
+/* HEADER */
+header {
+  background:var(--blu);
+  color:#fff;
+  padding:.9rem 1.4rem;
+  border-radius:10px;
+  margin-bottom:1rem;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:.5rem;
+  flex-wrap:wrap;
+}
+.header-left { display:flex; align-items:center; gap:.9rem; }
+.header-left img { width:2.4rem; height:2.4rem; border-radius:4px; object-fit:cover; flex:0 0 auto; }
+.header-eyebrow { font-family:'IBM Plex Mono',monospace; font-size:.62rem; letter-spacing:.15em; text-transform:uppercase; opacity:.7; }
+.header-title { font-size:1rem; font-weight:700; margin-top:.1rem; }
+.header-right { display:flex; align-items:center; gap:.7rem; }
+.rev-tag { font-family:'IBM Plex Mono',monospace; font-size:.6rem; opacity:.45; }
+.icon-btn {
+  background:rgba(255,255,255,.15);
+  border:none;
+  color:#fff;
+  width:2rem;
+  height:2rem;
+  border-radius:50%;
+  cursor:pointer;
+  font-size:1.1rem;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  transition:background .15s;
+  flex:0 0 auto;
+}
+.icon-btn:hover { background:rgba(255,255,255,.3); }
+
+/* PROGRESS */
+.progress {
+  background:#fff;
+  border-radius:8px;
+  padding:.5rem 1rem;
+  margin-bottom:.8rem;
+  font-size:.85rem;
+  color:var(--blu);
+  font-weight:700;
+  text-align:center;
+  display:none;
+}
+
+/* FILTRO ATTIVO */
+.filtro-attivo {
+  background:#fff;
+  border-radius:8px;
+  padding:.6rem 1rem;
+  margin-bottom:.6rem;
+  font-size:.85rem;
+  color:var(--blu);
+  display:flex;
+  align-items:center;
+  gap:.6rem;
+  flex-wrap:wrap;
+}
+
+/* CARDS */
+.scuola-label-row {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:.5rem;
+  margin:.8rem 0 .3rem;
+}
+.scuola-label {
+  background:#fff;
+  color:var(--blu);
+  font-weight:700;
+  font-size:.72rem;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  padding:.5rem 1rem;
+  border-radius:8px;
+  flex:1;
+}
+.solo-btn {
+  background:var(--blu);
+  color:#fff;
+  border:none;
+  border-radius:8px;
+  padding:.35rem .8rem;
+  font-size:.7rem;
+  font-weight:700;
+  cursor:pointer;
+  flex:0 0 auto;
+  white-space:nowrap;
+}
+.card {
+  background:#fff;
+  border-radius:10px;
+  padding:.75rem 1rem;
+  margin:.3rem 0;
+  display:flex;
+  align-items:center;
+  gap:.8rem;
+  box-shadow:0 1px 3px rgba(0,0,0,.08);
+  transition:opacity .3s;
+  flex-wrap:wrap;
+}
+.card.inviato { opacity:.42; }
+.info { flex:1; min-width:180px; }
+.nome { font-weight:700; font-size:.95rem; color:#111; }
+.data-invio { font-size:.7rem; color:var(--verde); margin-top:.15rem; }
+.no-match { font-size:.73rem; color:#e67e22; margin-top:.15rem; }
+.tel-input {
+  border:1px solid #ccc;
+  border-radius:8px;
+  padding:.45rem .7rem;
+  font-size:.85rem;
+  width:158px;
+  font-family:'Inter',sans-serif;
+}
+.tel-input:focus { outline:none; border-color:var(--blu); }
+.wa-btn {
+  display:inline-flex;
+  align-items:center;
+  gap:.4rem;
+  background:var(--verde);
+  color:#fff;
+  text-decoration:none;
+  border-radius:8px;
+  padding:.55rem 1rem;
+  font-size:.85rem;
+  font-weight:700;
+  white-space:nowrap;
+  border:none;
+  cursor:pointer;
+  transition:background .2s;
+  flex:0 0 auto;
+}
+.wa-btn[disabled], .wa-btn.inviato {
+  background:var(--grigio);
+  pointer-events:none;
+  cursor:default;
+}
+
+/* OVERLAY */
+.overlay {
+  display:none;
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.55);
+  z-index:100;
+  align-items:center;
+  justify-content:center;
+  padding:1rem;
+}
+.overlay.open { display:flex; }
+.panel {
+  background:#fff;
+  border-radius:14px;
+  padding:1.4rem;
+  width:100%;
+  max-width:620px;
+  max-height:90vh;
+  overflow-y:auto;
+}
+.panel h2 { font-size:1rem; color:var(--blu); margin-bottom:1rem; font-weight:700; }
+.field-label {
+  font-size:.75rem;
+  font-weight:700;
+  color:#444;
+  letter-spacing:.06em;
+  text-transform:uppercase;
+  display:block;
+  margin:.9rem 0 .3rem;
+}
+.field-label:first-of-type { margin-top:0; }
+.panel textarea, .panel input[type=text] {
+  width:100%;
+  border:1px solid #ccc;
+  border-radius:8px;
+  padding:.7rem;
+  font-size:.88rem;
+  font-family:'Inter',sans-serif;
+  line-height:1.5;
+}
+.panel textarea { resize:vertical; min-height:140px; }
+.panel textarea:focus, .panel input:focus { outline:none; border-color:var(--blu); }
+.legenda {
+  background:#f0f6ff;
+  border-radius:8px;
+  padding:.75rem 1rem;
+  font-size:.78rem;
+  margin-top:1rem;
+  line-height:1.7;
+  color:#333;
+}
+.legenda code {
+  background:#ddeeff;
+  border-radius:4px;
+  padding:.1rem .35rem;
+  font-family:monospace;
+  font-size:.82rem;
+  color:var(--blu);
+}
+.anteprima-box {
+  background:#f9f9f9;
+  border:1px solid #eee;
+  border-radius:8px;
+  padding:.75rem 1rem;
+  font-size:.82rem;
+  white-space:pre-wrap;
+  color:#333;
+  margin-top:.3rem;
+  line-height:1.5;
+}
+.panel-footer {
+  display:flex;
+  gap:.6rem;
+  margin-top:1.2rem;
+  justify-content:flex-end;
+  flex-wrap:wrap;
+}
+.ghost-btn {
+  background:transparent;
+  border:1px solid var(--blu);
+  color:var(--blu);
+  border-radius:8px;
+  padding:.5rem 1.1rem;
+  font-size:.85rem;
+  font-weight:700;
+  cursor:pointer;
+}
+.primary-btn {
+  background:var(--blu);
+  color:#fff;
+  border:none;
+  border-radius:8px;
+  padding:.5rem 1.3rem;
+  font-size:.85rem;
+  font-weight:700;
+  cursor:pointer;
+}
+.spinner-box { background:#fff; border-radius:10px; padding:2.5rem 1.4rem; margin-bottom:1rem; text-align:center; }
+.spinner { width:2.5rem; height:2.5rem; border:3px solid #e0ecf8; border-top-color:#005CA9; border-radius:50%; animation:spin .8s linear infinite; margin:0 auto .8rem; }
+@keyframes spin { to { transform:rotate(360deg); } }
+.spinner-label { font-size:.88rem; color:#666; }
+.errore {
+  background:#fdecea;
+  color:#c0392b;
+  border-radius:8px;
+  padding:.8rem 1rem;
+  margin:.5rem 0;
+  font-size:.88rem;
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <img src="logo.jpg" alt="SILP CGIL">
+    <div>
+      <div class="header-eyebrow">Coordinamento Nazionale SILP CGIL</div>
+      <div class="header-title">&#128240; Notizie <span class="corso-label">233&deg;</span> &mdash; Invio WhatsApp</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <span class="rev-tag">rev.2</span>
+    <button class="icon-btn" id="settingsBtn" title="Scrivi la comunicazione">&#9881;</button>
+  </div>
+</header>
+
+<!-- OVERLAY SCRIVI COMUNICAZIONE -->
+<div class="overlay" id="msgOverlay">
+  <div class="panel">
+    <h2>&#9999;&#65039; Scrivi la comunicazione</h2>
+
+    <p style="font-size:.73rem; color:#888; margin-bottom:.5rem;">Il testo &egrave; condiviso su Firebase: appena lo salvi, chiunque apra questa pagina lo vede aggiornato. Cambiare il testo azzera gli invii gi&agrave; segnati, si riparte da zero per la nuova comunicazione.</p>
+
+    <hr style="border:none; border-top:1px solid #eee; margin:1rem 0;">
+
+    <span class="field-label">Testo principale</span>
+    <textarea id="msgPrincipale" rows="8" oninput="aggiornaAnteprima()"></textarea>
+
+    <span class="field-label">Firma</span>
+    <input type="text" id="msgFirma" oninput="aggiornaAnteprima()">
+
+    <div class="legenda">
+      <strong>Variabili disponibili nel testo:</strong><br>
+      <code>{NOME}</code> &mdash; Nome dell'allievo<br>
+      <code>{COGNOME}</code> &mdash; Cognome dell'allievo<br>
+      <code>{SCUOLA}</code> &mdash; Scuola dell'allievo
+    </div>
+
+    <span class="field-label">Anteprima con dati di esempio</span>
+    <div class="anteprima-box" id="anteprima"></div>
+
+    <div class="panel-footer">
+      <button class="ghost-btn" onclick="resetMsg()">Ripristina testo di base</button>
+      <button class="ghost-btn" onclick="document.getElementById('msgOverlay').classList.remove('open')">Annulla</button>
+      <button class="primary-btn" onclick="salvaMsg()">Salva e condividi</button>
+    </div>
+  </div>
+</div>
+
+<!-- SPINNER ATTESA CARICAMENTO -->
+<div class="spinner-box" id="spinnerBox">
+  <div class="spinner"></div>
+  <div class="spinner-label" id="statusMsg">Caricamento contatti in corso&hellip;</div>
+</div>
+
+<!-- PROGRESS -->
+<div class="progress" id="progress"></div>
+
+<!-- LISTA ALLIEVI -->
+<div id="lista" style="display:none;"></div>
+
+<script>var TITLE_TEMPLATE = 'Notizie {CORSO} SILP CGIL rev.2';</script>
+<script src="corso-config.js"></script>
+<script>
+var GAS_URL = 'https://script.google.com/macros/s/AKfycbxsD7KImUy2Xa9egcfWmroGzoO1DEaHZwLt4Khocc4DOtAfGmSpPRrYUWufknSeV5fgoQ/exec';
+var contattiList = [];
+var scuolaFiltro = null;
+var testoCorrente = {};
+var versionHash = '';
+var invii = {};
+
+// ── FIREBASE REALTIME DATABASE (progetto quizassegnazioni, regole aperte sotto qiv2) ──
+var FIREBASE_DB = 'https://quizassegnazioni-default-rtdb.europe-west1.firebasedatabase.app';
+var FB_PATH_TESTO = 'qiv2/notizie233/testo';
+var FB_PATH_INVII_BASE = 'qiv2/notizie233/invii';
+
+async function fbSet(path, data) {
+  try {
+    var r = await fetch(FIREBASE_DB + '/' + path + '.json', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    if(r.ok) return { ok:true };
+    var errBody = '';
+    try { var j = await r.json(); errBody = j.error || ''; } catch(e2) {}
+    return { ok:false, detail:'HTTP ' + r.status + (errBody ? ' \u2014 ' + errBody : '') };
+  } catch(e) { return { ok:false, detail:'errore di rete: ' + e.message }; }
+}
+
+async function fbGet(path) {
+  try {
+    var r = await fetch(FIREBASE_DB + '/' + path + '.json?t=' + Date.now());
+    if(!r.ok) return null;
+    return await r.json();
+  } catch(e) { return null; }
+}
+
+// ── HELPER TESTO ─────────────────────────────────────────────
+function normalizzaTel(tel) {
+  var t = String(tel || '').replace(/\s+/g,'').replace(/^\+/,'');
+  if(t.startsWith('39') && t.length > 11) return t;
+  if(t.startsWith('3')) return '39' + t;
+  return t;
+}
+
+function normalizzaNome(s) {
+  return String(s || '').trim().toUpperCase().replace(/\s+/g,' ');
+}
+
+function hashTesto(s) {
+  var h = 5381;
+  for(var i = 0; i < s.length; i++) { h = ((h * 33) ^ s.charCodeAt(i)) >>> 0; }
+  return h.toString(36);
+}
+
+// ── MESSAGGIO DEFAULT ────────────────────────────────────────
+var DEFAULT_PRINCIPALE = 'Ciao {NOME},\n\n[Scrivi qui il testo della comunicazione]\n\nUn saluto dal Coordinamento Nazionale SILP CGIL.';
+var DEFAULT_FIRMA = 'Il Coordinamento Nazionale SILP CGIL';
+
+function buildTesto(nome, cognome, scuola) {
+  var principale = (testoCorrente.principale || DEFAULT_PRINCIPALE)
+    .replace(/\{NOME\}/g, nome)
+    .replace(/\{COGNOME\}/g, cognome)
+    .replace(/\{SCUOLA\}/g, scuola);
+  var firma = (testoCorrente.firma || DEFAULT_FIRMA)
+    .replace(/\{NOME\}/g, nome)
+    .replace(/\{COGNOME\}/g, cognome)
+    .replace(/\{SCUOLA\}/g, scuola);
+  return principale + '\n\n' + firma;
+}
+
+function aggiornaAnteprima() {
+  var principale = document.getElementById('msgPrincipale').value || DEFAULT_PRINCIPALE;
+  var firma = document.getElementById('msgFirma').value || DEFAULT_FIRMA;
+  var esempio = principale
+    .replace(/\{NOME\}/g, 'Mario')
+    .replace(/\{COGNOME\}/g, 'Rossi')
+    .replace(/\{SCUOLA\}/g, 'Scuola di esempio')
+    + '\n\n' + firma
+      .replace(/\{NOME\}/g, 'Mario')
+      .replace(/\{COGNOME\}/g, 'Rossi')
+      .replace(/\{SCUOLA\}/g, 'Scuola di esempio');
+  document.getElementById('anteprima').textContent = esempio;
+}
+
+function apriPannello() {
+  document.getElementById('msgPrincipale').value = testoCorrente.principale || DEFAULT_PRINCIPALE;
+  document.getElementById('msgFirma').value = testoCorrente.firma || DEFAULT_FIRMA;
+  aggiornaAnteprima();
+  document.getElementById('msgOverlay').classList.add('open');
+}
+
+function resetMsg() {
+  document.getElementById('msgPrincipale').value = DEFAULT_PRINCIPALE;
+  document.getElementById('msgFirma').value = DEFAULT_FIRMA;
+  aggiornaAnteprima();
+}
+
+async function salvaMsg() {
+  var principale = document.getElementById('msgPrincipale').value.trim() || DEFAULT_PRINCIPALE;
+  var firma = document.getElementById('msgFirma').value.trim() || DEFAULT_FIRMA;
+  var res = await fbSet(FB_PATH_TESTO, { principale: principale, firma: firma });
+  if(!res.ok) {
+    alert('Salvataggio fallito: ' + res.detail);
+    return;
+  }
+  testoCorrente = { principale: principale, firma: firma };
+  versionHash = hashTesto(principale + '||' + firma);
+  var nuoviInvii = await fbGet(FB_PATH_INVII_BASE + '/' + versionHash);
+  invii = nuoviInvii || {};
+  document.getElementById('msgOverlay').classList.remove('open');
+  render();
+}
+
+document.getElementById('settingsBtn').addEventListener('click', apriPannello);
+
+// ── WA SVG ───────────────────────────────────────────────────
+var WA_SVG = '<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>';
+
+// ── FILTRO SCUOLA ────────────────────────────────────────────
+function filtraScuola(scuola) {
+  scuolaFiltro = scuola;
+  render();
+  window.scrollTo({ top:0, behavior:'smooth' });
+}
+
+// ── LOOKUP CONTATTO PER CHIAVE ────────────────────────────────
+function trovaContattoPerChiave(chiave) {
+  return contattiList.find(function(c) {
+    return (normalizzaNome(c.cognome) + '_' + normalizzaNome(c.nome)).replace(/[^A-Z0-9_]/g,'') === chiave;
+  });
+}
+
+// ── RENDER ───────────────────────────────────────────────────
+function render() {
+  var lista = document.getElementById('lista');
+  var perScuola = {};
+  contattiList.forEach(function(c) {
+    var k = c.scuola || 'SCUOLA NON INDICATA';
+    if(!perScuola[k]) perScuola[k] = [];
+    perScuola[k].push(c);
+  });
+
+  var html = '';
+  if(scuolaFiltro) {
+    html += '<div class="filtro-attivo">\uD83D\uDD0E Solo: <strong>' + scuolaFiltro + '</strong> &nbsp; <button class="ghost-btn" onclick="filtraScuola(null)">Mostra tutte le scuole</button></div>';
+  }
+
+  Object.keys(perScuola).sort().forEach(function(scuola) {
+    if(scuolaFiltro && scuola !== scuolaFiltro) return;
+    var scuolaSafe = scuola.replace(/'/g, "\\'");
+    html += '<div class="scuola-label-row"><span class="scuola-label">' + scuola + '</span>';
+    if(!scuolaFiltro) html += '<button class="solo-btn" onclick="filtraScuola(\'' + scuolaSafe + '\')">Solo questa</button>';
+    html += '</div>';
+
+    perScuola[scuola].forEach(function(c) {
+      var cognome = normalizzaNome(c.cognome);
+      var nome = normalizzaNome(c.nome);
+      var chiave = (cognome + '_' + nome).replace(/[^A-Z0-9_]/g,'');
+      var tel = c.tel;
+      var inv = invii[chiave];
+      var isInviato = !!inv;
+      var testo = buildTesto(nome, cognome, scuola);
+      var waLink = tel ? ('https://wa.me/' + tel + '?text=' + encodeURIComponent(testo)) : '';
+      var safeChiave = chiave.replace(/'/g, "\\'");
+
+      html += '<div class="card' + (isInviato ? ' inviato' : '') + '" id="card_' + chiave + '">';
+      html += '<div class="info">';
+      html += '<div class="nome">' + cognome + ' ' + nome + (tel ? ' <span style="font-weight:400;font-size:.78rem;color:#888;">+' + tel + '</span>' : '') + '</div>';
+      if(isInviato) html += '<div class="data-invio">\u2713 Inviato il ' + inv.data + '</div>';
+      if(!tel && !isInviato) {
+        html += '<div class="no-match">\u26A0\uFE0F Numero non trovato &mdash; inseriscilo qui sotto</div>';
+        html += '<div style="display:flex;gap:.5rem;align-items:center;margin-top:.5rem;flex-wrap:wrap;">';
+        html += '<input class="tel-input" type="tel" id="tel_' + chiave + '" placeholder="39XXXXXXXXXX" oninput="abilitaBtn(\'' + safeChiave + '\', this.value)">';
+        html += '<a class="wa-btn" id="btn_' + chiave + '" disabled onclick="segnaInviato(\'' + safeChiave + '\', this, document.getElementById(\'card_' + chiave + '\'))">';
+        html += WA_SVG + ' Invia WA</a>';
+        html += '</div>';
+      }
+      html += '</div>';
+      if(tel) {
+        html += '<a class="wa-btn' + (isInviato ? ' inviato' : '') + '" id="btn_' + chiave + '"';
+        html += ' href="' + waLink + '" target="_blank"';
+        html += ' onclick="segnaInviato(\'' + safeChiave + '\', this, document.getElementById(\'card_' + chiave + '\'))">';
+        html += isInviato ? '\u2713 Inviato' : (WA_SVG + ' Invia WA');
+        html += '</a>';
+      }
+      html += '</div>';
+    });
+  });
+
+  lista.innerHTML = html;
+  aggiornaProgress();
+}
+
+// ── ABILITA PULSANTE CON NUMERO INSERITO ────────────────────
+function abilitaBtn(chiave, val) {
+  var tel = normalizzaTel(val);
+  var btn = document.getElementById('btn_' + chiave);
+  var c = trovaContattoPerChiave(chiave);
+  if(!btn || !c) return;
+  if(tel.length >= 11) {
+    c.tel = tel;
+    var testo = buildTesto(normalizzaNome(c.nome), normalizzaNome(c.cognome), c.scuola || 'SCUOLA NON INDICATA');
+    btn.removeAttribute('disabled');
+    btn.href = 'https://wa.me/' + tel + '?text=' + encodeURIComponent(testo);
+  } else {
+    btn.setAttribute('disabled', '');
+  }
+}
+
+// ── SEGNA INVIATO (condiviso su Firebase) ────────────────────
+function segnaInviato(chiave, btnEl, cardEl) {
+  setTimeout(function() {
+    var c = trovaContattoPerChiave(chiave);
+    if(!c) return;
+    var testoInviato = buildTesto(normalizzaNome(c.nome), normalizzaNome(c.cognome), c.scuola || 'SCUOLA NON INDICATA');
+    var dataStr = new Date().toLocaleString('it-IT');
+    invii[chiave] = { data: dataStr, testo: testoInviato };
+
+    btnEl.classList.add('inviato');
+    btnEl.innerHTML = '\u2713 Inviato';
+    cardEl.classList.add('inviato');
+    var dataEl = cardEl.querySelector('.data-invio');
+    if(dataEl) {
+      dataEl.textContent = '\u2713 Inviato il ' + dataStr;
+    } else {
+      var infoEl = cardEl.querySelector('.info');
+      if(infoEl) infoEl.insertAdjacentHTML('beforeend', '<div class="data-invio">\u2713 Inviato il ' + dataStr + '</div>');
+    }
+    aggiornaProgress();
+    fbSet(FB_PATH_INVII_BASE + '/' + versionHash + '/' + chiave, invii[chiave]);
+  }, 700);
+}
+
+function aggiornaProgress() {
+  var conTel = contattiList.filter(function(c) { return c.tel; }).length;
+  var totali = contattiList.length;
+  var inviati = Object.keys(invii).length;
+  var el = document.getElementById('progress');
+  el.style.display = 'block';
+  el.textContent = inviati + ' / ' + conTel + ' inviati  \u2022  ' + totali + ' contatti totali  \u2022  ' + (totali - conTel) + ' senza numero';
+}
+
+// ── AVVIO: carica contatti dal backend, poi testo e invii da Firebase ──
+function nascondiSpinner() {
+  document.getElementById('spinnerBox').style.display = 'none';
+  document.getElementById('lista').style.display = 'block';
+}
+
+function caricaTestoEInvii() {
+  fbGet(FB_PATH_TESTO).then(function(t) {
+    testoCorrente = (t && t.principale) ? t : { principale: DEFAULT_PRINCIPALE, firma: DEFAULT_FIRMA };
+    versionHash = hashTesto((testoCorrente.principale || '') + '||' + (testoCorrente.firma || ''));
+    fbGet(FB_PATH_INVII_BASE + '/' + versionHash).then(function(inv) {
+      invii = inv || {};
+      nascondiSpinner();
+      render();
+    });
+  });
+}
+
+function fetchContattiConRetry(tentativo) {
+  tentativo = tentativo || 1;
+  fetch(GAS_URL + '?action=getContatti')
+    .then(function(r) { return r.text(); })
+    .then(function(txt) {
+      var data;
+      try { data = JSON.parse(txt); }
+      catch(e) {
+        if(tentativo < 3) {
+          document.getElementById('statusMsg').textContent = 'Backend lento a rispondere, ritento\u2026 (' + tentativo + '/3)';
+          setTimeout(function(){ fetchContattiConRetry(tentativo + 1); }, 2500);
+          return;
+        }
+        document.getElementById('statusMsg').textContent = '\u26A0\uFE0F Backend non raggiunto dopo 3 tentativi: risposta non valida.';
+        return;
+      }
+      if(data.contatti) {
+        var vistiNomi = {};
+        contattiList = [];
+        data.contatti.forEach(function(c) {
+          var tel = normalizzaTel(c.tel);
+          var chiaveNome = normalizzaNome(c.cognome) + '|' + normalizzaNome(c.nome);
+          if(!(c.cognome || c.nome)) return;
+          if(!vistiNomi[chiaveNome]) {
+            vistiNomi[chiaveNome] = true;
+            contattiList.push({ cognome: c.cognome, nome: c.nome, scuola: c.scuola || 'SCUOLA NON INDICATA', tel: tel });
+          } else if(tel) {
+            var esistente = contattiList.find(function(x) {
+              return (normalizzaNome(x.cognome) + '|' + normalizzaNome(x.nome)) === chiaveNome;
+            });
+            if(esistente && !esistente.tel) esistente.tel = tel;
+          }
+        });
+        document.getElementById('statusMsg').textContent = '\u2713 ' + contattiList.length + ' contatti caricati.';
+        caricaTestoEInvii();
+      } else {
+        document.getElementById('statusMsg').textContent = '\u26A0\uFE0F Errore: ' + JSON.stringify(data);
+      }
+    })
+    .catch(function(err) {
+      if(tentativo < 3) {
+        document.getElementById('statusMsg').textContent = 'Backend lento a rispondere, ritento\u2026 (' + tentativo + '/3)';
+        setTimeout(function(){ fetchContattiConRetry(tentativo + 1); }, 2500);
+        return;
+      }
+      document.getElementById('statusMsg').textContent = '\u26A0\uFE0F Backend non raggiunto: ' + err.message;
+    });
+}
+
+fetchContattiConRetry();
+</script>
+</body>
+</html>

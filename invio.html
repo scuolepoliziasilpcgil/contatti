@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>WhatsApp — Contatti 233° — rev.2</title>
+<title>WhatsApp — Contatti 233° — rev.4</title>
 <style>
   :root { --blu:#005CA9; --verde:#25D366; --grigio:#bbb; }
   * { box-sizing:border-box; margin:0; padding:0; }
@@ -29,16 +29,18 @@
 </head>
 <body>
 <header>
-  <h1>📋 Contatti 233° — Invio WhatsApp</h1>
+  <h1>&#128203; Contatti <span class="corso-label">233&deg;</span> &mdash; Invio WhatsApp</h1>
   <div class="header-right">
-    <span id="nomeMittenteLabel" style="font-size:.82rem; opacity:.85; cursor:pointer;" onclick="cambiaNome()" title="Clicca per cambiare nome">👤 <span id="nomeMittenteSpan">—</span></span>
-    <span id="totLabel">Caricamento…</span>
-    <span class="rev-tag">rev.3</span>
+    <span id="nomeMittenteLabel" style="font-size:.82rem; opacity:.85; cursor:pointer;" onclick="cambiaNome()" title="Clicca per cambiare nome">&#128100; <span id="nomeMittenteSpan">&mdash;</span></span>
+    <span id="totLabel">Caricamento&hellip;</span>
+    <span class="rev-tag">rev.4</span>
   </div>
 </header>
 <div class="progress" id="progress">Caricamento contatti…</div>
 <div id="lista"><div class="loading">⏳ Caricamento in corso…</div></div>
 
+<script>var TITLE_TEMPLATE = 'WhatsApp \u2014 Contatti {CORSO} \u2014 rev.4';</script>
+<script src="corso-config.js"></script>
 <script>
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbxsD7KImUy2Xa9egcfWmroGzoO1DEaHZwLt4Khocc4DOtAfGmSpPRrYUWufknSeV5fgoQ/exec';
 

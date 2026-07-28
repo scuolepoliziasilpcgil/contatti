@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Destinazioni 233 SILP CGIL rev.25</title>
+<title>Destinazioni 233 SILP CGIL rev.26</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
@@ -309,11 +309,11 @@ input[type=file] { display:none; }
     <img src="logo.jpg" alt="SILP CGIL">
     <div>
       <div class="header-eyebrow">Coordinamento Nazionale SILP CGIL</div>
-      <div class="header-title">&#128205; Destinazioni 233&deg; &mdash; Invio WhatsApp</div>
+      <div class="header-title">&#128205; Destinazioni <span class="corso-label">233&deg;</span> &mdash; Invio WhatsApp</div>
     </div>
   </div>
   <div class="header-right">
-    <span class="rev-tag">rev.25</span>
+    <span class="rev-tag">rev.26</span>
     <button class="icon-btn" id="settingsBtn" title="Modifica messaggio">&#9881;</button>
   </div>
 </header>
@@ -396,6 +396,8 @@ input[type=file] { display:none; }
 <div id="lista"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>var TITLE_TEMPLATE = 'Destinazioni {CORSO} SILP CGIL rev.26';</script>
+<script src="corso-config.js"></script>
 <script>
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbxsD7KImUy2Xa9egcfWmroGzoO1DEaHZwLt4Khocc4DOtAfGmSpPRrYUWufknSeV5fgoQ/exec';
 var KEY_INVIATI = 'destino233_inviati';

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SILP CGIL · Lascia i tuoi contatti — rev.3</title>
+<title>SILP CGIL · Lascia i tuoi contatti — rev.4</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
 <style>
@@ -255,13 +255,13 @@
 <header>
   <img src="logo.jpg" alt="SILP CGIL">
   SILP CGIL · Coordinamento Scuole di Polizia
-  <span class="rev-tag">rev.3</span>
+  <span class="rev-tag">rev.4</span>
 </header>
 
 <div class="config-bar">
   <div class="config-inner">
     <span class="config-label">Numero corso</span>
-    <input class="config-input" id="corsoInput" type="number" min="1" placeholder="233" value="233">
+    <input class="config-input" id="corsoInput" type="number" min="1" placeholder="233">
   </div>
 </div>
 
@@ -338,6 +338,7 @@
   </div>
 </div>
 
+<script src="corso-config.js"></script>
 <script>
   // ── CONFIGURAZIONE ──────────────────────────────────────────
   const GAS_URL = 'https://script.google.com/macros/s/' + 'AKfycbxsD7KImUy2Xa9egcfWmroGzoO1DEaHZwLt4Khocc4DOtAfGmSpPRrYUWufknSeV5fgoQ' + '/exec';
@@ -372,7 +373,6 @@
     try{
       const res = await fetch(GAS_URL + '?action=state');
       const data = await res.json();
-      if(data.corso) document.getElementById('corsoInput').value = data.corso;
       localStorage.setItem('terzoNome', data.terzoNome || '');
       localStorage.setItem('terzoNumero', data.terzoNumero || '');
       aggiornaTerzoPulsante(data.terzoNome || '', data.terzoNumero || '');
