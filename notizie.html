@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Notizie 233 SILP CGIL rev.3</title>
+<title>Notizie 233 SILP CGIL rev.5</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
@@ -324,7 +324,7 @@ header {
     </div>
   </div>
   <div class="header-right">
-    <span class="rev-tag">rev.3</span>
+    <span class="rev-tag">rev.5</span>
     <button class="icon-btn" id="settingsBtn" title="Scrivi la comunicazione" style="display:none;">&#9881;</button>
   </div>
 </header>
@@ -334,9 +334,14 @@ header {
   <div class="panel">
     <h2>&#9999;&#65039; Scrivi la comunicazione</h2>
 
-    <p style="font-size:.73rem; color:#888; margin-bottom:.5rem;">Il testo &egrave; condiviso su Firebase: appena lo salvi, chiunque apra questa pagina lo vede aggiornato. Cambiare il testo azzera gli invii gi&agrave; segnati, si riparte da zero per la nuova comunicazione.</p>
+    <p style="font-size:.73rem; color:#888; margin-bottom:.5rem;">Ogni scuola ha un proprio testo. Cambiandolo, gli invii gi&agrave; segnati per <strong>quella scuola</strong> ripartono da zero, le altre scuole non vengono toccate. Salvato su Firebase, condiviso subito con chi ha il link.</p>
 
     <hr style="border:none; border-top:1px solid #eee; margin:1rem 0;">
+
+    <div id="scuolaSelettoreWrap" style="display:none;">
+      <span class="field-label">Scuola</span>
+      <select id="scuolaMsgSelect" onchange="cambiaScuolaMsg()" style="width:100%; border:1px solid #ccc; border-radius:8px; padding:.6rem; font-size:.85rem; font-family:'Inter',sans-serif;"></select>
+    </div>
 
     <span class="field-label">Testo principale</span>
     <textarea id="msgPrincipale" rows="8" oninput="aggiornaAnteprima()"></textarea>
@@ -392,15 +397,16 @@ header {
 <!-- LISTA ALLIEVI -->
 <div id="lista" style="display:none;"></div>
 
-<script>var TITLE_TEMPLATE = 'Notizie {CORSO} SILP CGIL rev.3';</script>
+<script>var TITLE_TEMPLATE = 'Notizie {CORSO} SILP CGIL rev.5';</script>
 <script src="corso-config.js"></script>
 <script>
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbxsD7KImUy2Xa9egcfWmroGzoO1DEaHZwLt4Khocc4DOtAfGmSpPRrYUWufknSeV5fgoQ/exec';
 var contattiList = [];
 var scuolaFiltro = null;
-var testoCorrente = {};
-var versionHash = '';
+var testiPerScuola = {};
+var versionPerScuola = {};
 var invii = {};
+var scuolaMsgCorrente = '';
 
 // ── ACCESSO ──────────────────────────────────────────────────
 var CODICE_S = new URLSearchParams(location.search).get('s') || '';
@@ -415,10 +421,14 @@ var registroCorrente = {};
 
 // ── FIREBASE REALTIME DATABASE (progetto quizassegnazioni, regole aperte sotto qiv2) ──
 var FIREBASE_DB = 'https://quizassegnazioni-default-rtdb.europe-west1.firebasedatabase.app';
-var FB_PATH_TESTO = 'qiv2/notizie233/testo';
+var FB_PATH_TESTI_BASE = 'qiv2/notizie233/testi';
 var FB_PATH_INVII_BASE = 'qiv2/notizie233/invii';
 var FB_PATH_CODICI = 'qiv2/notizie233/codiciScuole';
 var FB_PATH_ARCHIVIO_INDICE = 'qiv2/archivio/_indice';
+
+function chiaveScuolaFirebase(scuola) {
+  return String(scuola || 'SCUOLA_NON_INDICATA').replace(/[.#$\[\]\/]/g, '_');
+}
 
 async function fbSet(path, data) {
   try {
@@ -464,12 +474,24 @@ function hashTesto(s) {
 var DEFAULT_PRINCIPALE = 'Ciao {NOME},\n\n[Scrivi qui il testo della comunicazione]\n\nUn saluto dal Coordinamento Nazionale SILP CGIL.';
 var DEFAULT_FIRMA = 'Il Coordinamento Nazionale SILP CGIL';
 
+// Testo effettivo per una scuola: il suo proprio, altrimenti il predefinito, altrimenti quello di base
+function testoEffettivo(scuola) {
+  var chiave = chiaveScuolaFirebase(scuola);
+  return testiPerScuola[chiave] || testiPerScuola['_default'] || { principale: DEFAULT_PRINCIPALE, firma: DEFAULT_FIRMA };
+}
+
+function hashPerScuola(scuola) {
+  var t = testoEffettivo(scuola);
+  return hashTesto((t.principale || '') + '||' + (t.firma || ''));
+}
+
 function buildTesto(nome, cognome, scuola) {
-  var principale = (testoCorrente.principale || DEFAULT_PRINCIPALE)
+  var t = testoEffettivo(scuola);
+  var principale = (t.principale || DEFAULT_PRINCIPALE)
     .replace(/\{NOME\}/g, nome)
     .replace(/\{COGNOME\}/g, cognome)
     .replace(/\{SCUOLA\}/g, scuola);
-  var firma = (testoCorrente.firma || DEFAULT_FIRMA)
+  var firma = (t.firma || DEFAULT_FIRMA)
     .replace(/\{NOME\}/g, nome)
     .replace(/\{COGNOME\}/g, cognome)
     .replace(/\{SCUOLA\}/g, scuola);
@@ -490,10 +512,43 @@ function aggiornaAnteprima() {
   document.getElementById('anteprima').textContent = esempio;
 }
 
-function apriPannello() {
-  document.getElementById('msgPrincipale').value = testoCorrente.principale || DEFAULT_PRINCIPALE;
-  document.getElementById('msgFirma').value = testoCorrente.firma || DEFAULT_FIRMA;
+function popolaSelectScuoleMsg() {
+  var sel = document.getElementById('scuolaMsgSelect');
+  var scuoleOrdinate = Array.from(new Set(contattiList.map(function(c) { return c.scuola || 'SCUOLA NON INDICATA'; }))).sort();
+  var html = '<option value="_default">Messaggio predefinito (per le scuole senza testo proprio)</option>';
+  scuoleOrdinate.forEach(function(s) {
+    html += '<option value="' + s.replace(/"/g, '&quot;') + '">' + s + '</option>';
+  });
+  sel.innerHTML = html;
+}
+
+function caricaCampiMsgPerScuola(scuola) {
+  var t;
+  if(scuola === '_default') {
+    t = testiPerScuola['_default'] || { principale: DEFAULT_PRINCIPALE, firma: DEFAULT_FIRMA };
+  } else {
+    t = testiPerScuola[chiaveScuolaFirebase(scuola)] || testoEffettivo(scuola);
+  }
+  document.getElementById('msgPrincipale').value = t.principale || DEFAULT_PRINCIPALE;
+  document.getElementById('msgFirma').value = t.firma || DEFAULT_FIRMA;
   aggiornaAnteprima();
+}
+
+function cambiaScuolaMsg() {
+  scuolaMsgCorrente = document.getElementById('scuolaMsgSelect').value;
+  caricaCampiMsgPerScuola(scuolaMsgCorrente);
+}
+
+function apriPannello() {
+  if(MODALITA === 'admin') {
+    document.getElementById('scuolaSelettoreWrap').style.display = 'block';
+    popolaSelectScuoleMsg();
+    scuolaMsgCorrente = document.getElementById('scuolaMsgSelect').value;
+  } else {
+    document.getElementById('scuolaSelettoreWrap').style.display = 'none';
+    scuolaMsgCorrente = SCUOLA_ASSEGNATA;
+  }
+  caricaCampiMsgPerScuola(scuolaMsgCorrente);
   document.getElementById('msgOverlay').classList.add('open');
 }
 
@@ -506,17 +561,16 @@ function resetMsg() {
 async function salvaMsg() {
   var principale = document.getElementById('msgPrincipale').value.trim() || DEFAULT_PRINCIPALE;
   var firma = document.getElementById('msgFirma').value.trim() || DEFAULT_FIRMA;
-  var res = await fbSet(FB_PATH_TESTO, { principale: principale, firma: firma });
+  var target = (MODALITA === 'admin') ? scuolaMsgCorrente : SCUOLA_ASSEGNATA;
+  var chiaveTarget = (target === '_default') ? '_default' : chiaveScuolaFirebase(target);
+  var res = await fbSet(FB_PATH_TESTI_BASE + '/' + chiaveTarget, { principale: principale, firma: firma });
   if(!res.ok) {
     alert('Salvataggio fallito: ' + res.detail);
     return;
   }
-  testoCorrente = { principale: principale, firma: firma };
-  versionHash = hashTesto(principale + '||' + firma);
-  var nuoviInvii = await fbGet(FB_PATH_INVII_BASE + '/' + versionHash);
-  invii = nuoviInvii || {};
+  await caricaTestiEInvii();
   document.getElementById('msgOverlay').classList.remove('open');
-  render();
+  if(vistaAdmin === 'registro') renderRegistro(); else render();
 }
 
 document.getElementById('settingsBtn').addEventListener('click', apriPannello);
@@ -640,14 +694,22 @@ function segnaInviato(chiave, btnEl, cardEl) {
       if(infoEl) infoEl.insertAdjacentHTML('beforeend', '<div class="data-invio">\u2713 Inviato il ' + dataStr + '</div>');
     }
     aggiornaProgress();
-    fbSet(FB_PATH_INVII_BASE + '/' + versionHash + '/' + chiave, record);
+    var scuola = c.scuola || 'SCUOLA NON INDICATA';
+    var hash = versionPerScuola[scuola] || hashPerScuola(scuola);
+    fbSet(FB_PATH_INVII_BASE + '/' + chiaveScuolaFirebase(scuola) + '/' + hash + '/' + chiave, record);
   }, 700);
 }
 
 function aggiornaProgress() {
-  var conTel = contattiList.filter(function(c) { return c.tel; }).length;
-  var totali = contattiList.length;
-  var inviati = Object.keys(invii).length;
+  var elenco = scuolaFiltro
+    ? contattiList.filter(function(c) { return (c.scuola || 'SCUOLA NON INDICATA') === scuolaFiltro; })
+    : contattiList;
+  var conTel = elenco.filter(function(c) { return c.tel; }).length;
+  var totali = elenco.length;
+  var inviati = elenco.filter(function(c) {
+    var chiave = (normalizzaNome(c.cognome) + '_' + normalizzaNome(c.nome)).replace(/[^A-Z0-9_]/g,'');
+    return !!invii[chiave];
+  }).length;
   var el = document.getElementById('progress');
   el.style.display = 'block';
   el.textContent = inviati + ' / ' + conTel + ' inviati  \u2022  ' + totali + ' contatti totali  \u2022  ' + (totali - conTel) + ' senza numero';
@@ -700,14 +762,17 @@ function mostraAccessoNegato() {
 // ── REGISTRO INVII (solo admin) ──────────────────────────────
 async function caricaRegistro() {
   var base = (corsoSelezionato === 'attivo') ? FB_PATH_INVII_BASE : ('qiv2/archivio/' + corsoSelezionato + '/notizie/invii');
-  var tutti = await fbGet(base) || {};
+  var tutteLeScuole = await fbGet(base) || {};
   var perAllievo = {};
-  Object.keys(tutti).forEach(function(hash) {
-    var gruppo = tutti[hash] || {};
-    Object.keys(gruppo).forEach(function(chiave) {
-      var rec = gruppo[chiave];
-      if(!perAllievo[chiave]) perAllievo[chiave] = { nome: rec.nome, cognome: rec.cognome, scuola: rec.scuola, invii: [] };
-      perAllievo[chiave].invii.push(rec);
+  Object.keys(tutteLeScuole).forEach(function(scuolaKey) {
+    var gruppiHash = tutteLeScuole[scuolaKey] || {};
+    Object.keys(gruppiHash).forEach(function(hash) {
+      var gruppo = gruppiHash[hash] || {};
+      Object.keys(gruppo).forEach(function(chiave) {
+        var rec = gruppo[chiave];
+        if(!perAllievo[chiave]) perAllievo[chiave] = { nome: rec.nome, cognome: rec.cognome, scuola: rec.scuola, invii: [] };
+        perAllievo[chiave].invii.push(rec);
+      });
     });
   });
   return perAllievo;
@@ -894,14 +959,20 @@ function caricaContatti() {
   });
 }
 
-function caricaTestoEInvii() {
-  return fbGet(FB_PATH_TESTO).then(function(t) {
-    testoCorrente = (t && t.principale) ? t : { principale: DEFAULT_PRINCIPALE, firma: DEFAULT_FIRMA };
-    versionHash = hashTesto((testoCorrente.principale || '') + '||' + (testoCorrente.firma || ''));
-    return fbGet(FB_PATH_INVII_BASE + '/' + versionHash).then(function(inv) {
-      invii = inv || {};
-    });
-  });
+async function caricaTestiEInvii() {
+  testiPerScuola = await fbGet(FB_PATH_TESTI_BASE) || {};
+  var scuoleDaCaricare = (MODALITA === 'scuola')
+    ? [SCUOLA_ASSEGNATA]
+    : Array.from(new Set(contattiList.map(function(c) { return c.scuola || 'SCUOLA NON INDICATA'; })));
+
+  invii = {};
+  for(var i = 0; i < scuoleDaCaricare.length; i++) {
+    var scuola = scuoleDaCaricare[i];
+    var hash = hashPerScuola(scuola);
+    versionPerScuola[scuola] = hash;
+    var datiScuola = await fbGet(FB_PATH_INVII_BASE + '/' + chiaveScuolaFirebase(scuola) + '/' + hash) || {};
+    Object.assign(invii, datiScuola);
+  }
 }
 
 async function avvia() {
@@ -932,9 +1003,10 @@ async function avvia() {
     await caricaArchiviDisponibili();
   } else {
     scuolaFiltro = SCUOLA_ASSEGNATA;
+    document.getElementById('settingsBtn').style.display = 'flex';
   }
 
-  await caricaTestoEInvii();
+  await caricaTestiEInvii();
   nascondiSpinner();
   render();
 }

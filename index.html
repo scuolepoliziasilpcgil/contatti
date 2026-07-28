@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SILP CGIL · Lascia i tuoi contatti — rev.6</title>
+<title>SILP CGIL · Lascia i tuoi contatti — rev.7</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
 <style>
@@ -292,7 +292,7 @@
 <header>
   <img src="logo.jpg" alt="SILP CGIL">
   SILP CGIL · Coordinamento Scuole di Polizia
-  <span class="rev-tag">rev.6</span>
+  <span class="rev-tag">rev.7</span>
   <button class="icon-btn" id="adminBtn" title="Amministrazione" onclick="apriAdminPanel()">&#9881;</button>
 </header>
 
@@ -501,12 +501,12 @@
     if(destinoDati) await fbSetIndex('qiv2/archivio/' + numero + '/destino', destinoDati);
     await fbDeleteIndex('qiv2/destino233');
 
-    const testoDati = await fbGetIndex('qiv2/notizie233/testo');
+    const testoDati = await fbGetIndex('qiv2/notizie233/testi');
     const inviiDati = await fbGetIndex('qiv2/notizie233/invii');
     if(testoDati || inviiDati){
-      await fbSetIndex('qiv2/archivio/' + numero + '/notizie', { testo: testoDati, invii: inviiDati });
+      await fbSetIndex('qiv2/archivio/' + numero + '/notizie', { testi: testoDati, invii: inviiDati });
     }
-    await fbDeleteIndex('qiv2/notizie233/testo');
+    await fbDeleteIndex('qiv2/notizie233/testi');
     await fbDeleteIndex('qiv2/notizie233/invii');
 
     const indice = await fbGetIndex('qiv2/archivio/_indice') || [];
