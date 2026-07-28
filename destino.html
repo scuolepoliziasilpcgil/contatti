@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Destinazioni 233 SILP CGIL rev.13</title>
+<title>Destinazioni 233 SILP CGIL rev.14</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
@@ -311,7 +311,7 @@ input[type=file] { display:none; }
     </div>
   </div>
   <div class="header-right">
-    <span class="rev-tag">rev.13</span>
+    <span class="rev-tag">rev.14</span>
     <button class="icon-btn" id="settingsBtn" title="Modifica messaggio">&#9881;</button>
   </div>
 </header>
@@ -321,9 +321,12 @@ input[type=file] { display:none; }
   <div class="panel">
     <h2>&#9999;&#65039; Impostazioni</h2>
 
-    <span class="field-label">Token GitHub (per condivisione file tra dispositivi)</span>
-    <input type="password" id="githubToken" placeholder="ghp_...">
-    <p style="font-size:.73rem; color:#888; margin-top:.3rem;">Il token viene salvato solo nel tuo browser. Serve per caricare i file su GitHub così gli altri li trovano già pronti. Lascia vuoto se non vuoi la condivisione.</p>
+    <span class="field-label">Token GitHub (solo per chi carica i file)</span>
+    <div style="display:flex; gap:.5rem; align-items:center; margin-bottom:.3rem;">
+      <input type="password" id="githubToken" placeholder="ghp_..." style="flex:1;">
+      <button class="primary-btn" onclick="salvaToken()" style="white-space:nowrap;">Salva token</button>
+    </div>
+    <p style="font-size:.73rem; color:#888; margin-bottom:.5rem;">Serve solo al dispositivo che carica i file. Gli altri leggono automaticamente senza token. Il token rimane salvato nel tuo browser.</p>
 
     <hr style="border:none; border-top:1px solid #eee; margin:1rem 0;">
 
@@ -510,13 +513,21 @@ var GITHUB_REPO = 'scuolepoliziasilpcgil/contatti';
 var GITHUB_FILE_DEST = 'data_destinazioni.json';
 var GITHUB_FILE_SEG  = 'data_segretari.json';
 var KEY_TOKEN = 'destino233_ghtoken';
-var GITHUB_TOKEN_DEFAULT = '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';
 
-function getToken(){ return localStorage.getItem(KEY_TOKEN) || GITHUB_TOKEN_DEFAULT; }
+function getToken(){ return localStorage.getItem(KEY_TOKEN) || ''; }
+
+function salvaToken() {
+  var token = document.getElementById('githubToken').value.trim();
+  if(token) {
+    localStorage.setItem(KEY_TOKEN, token);
+    alert('\u2713 Token salvato. Ora puoi caricare i file.');
+  } else {
+    localStorage.removeItem(KEY_TOKEN);
+    alert('Token rimosso.');
+  }
+}
 
 function salvaMsg() {
-  var token = document.getElementById('githubToken').value.trim();
-  if(token) localStorage.setItem(KEY_TOKEN, token);
   var m = {
     principale: document.getElementById('msgPrincipale').value.trim() || DEFAULT_PRINCIPALE,
     segretario: document.getElementById('msgSegretario').value.trim() || DEFAULT_SEGRETARIO,
