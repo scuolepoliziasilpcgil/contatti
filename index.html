@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SILP CGIL · Lascia i tuoi contatti — rev.4</title>
+<title>SILP CGIL · Lascia i tuoi contatti — rev.5</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
 <style>
@@ -61,6 +61,68 @@
     letter-spacing:.08em;
     flex:0 0 auto;
   }
+  .icon-btn{
+    display:none;
+    background:rgba(255,255,255,.15);
+    border:none;
+    color:var(--crema);
+    width:2rem;
+    height:2rem;
+    border-radius:50%;
+    cursor:pointer;
+    font-size:1.05rem;
+    align-items:center;
+    justify-content:center;
+    flex:0 0 auto;
+    margin-left:.6rem;
+  }
+  .icon-btn:hover{ background:rgba(255,255,255,.3); }
+  .overlay{
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.55);
+    z-index:200;
+    align-items:center;
+    justify-content:center;
+    padding:1rem;
+  }
+  .overlay.open{ display:flex; }
+  .panel{
+    background:#fff;
+    color:#222;
+    border-radius:14px;
+    padding:1.4rem;
+    width:100%;
+    max-width:520px;
+    max-height:90vh;
+    overflow-y:auto;
+    font-family:'Inter',sans-serif;
+  }
+  .panel h2{ font-size:1rem; color:var(--blu-deep); margin-bottom:.8rem; font-weight:700; }
+  .panel p{ font-size:.82rem; color:#555; margin-bottom:.8rem; line-height:1.5; }
+  .panel-footer{ display:flex; gap:.6rem; justify-content:flex-end; margin-top:1rem; flex-wrap:wrap; }
+  .panel .danger-btn{
+    background:var(--rosso);
+    color:#fff;
+    border:none;
+    border-radius:8px;
+    padding:.6rem 1.2rem;
+    font-size:.85rem;
+    font-weight:700;
+    cursor:pointer;
+  }
+  .panel .ghost-btn{
+    background:transparent;
+    border:1px solid var(--blu-deep);
+    color:var(--blu-deep);
+    border-radius:8px;
+    padding:.6rem 1.2rem;
+    font-size:.85rem;
+    font-weight:700;
+    cursor:pointer;
+  }
+  #archivioStatus{ font-size:.78rem; color:var(--blu-deep); margin-top:.8rem; line-height:1.5; }
 
   /* PANNELLO CONFIGURAZIONE */
   .config-bar{
@@ -255,8 +317,23 @@
 <header>
   <img src="logo.jpg" alt="SILP CGIL">
   SILP CGIL · Coordinamento Scuole di Polizia
-  <span class="rev-tag">rev.4</span>
+  <span class="rev-tag">rev.5</span>
+  <button class="icon-btn" id="adminBtn" title="Amministrazione" onclick="apriAdminPanel()">&#9881;</button>
 </header>
+
+<!-- OVERLAY ADMIN -->
+<div class="overlay" id="adminOverlay">
+  <div class="panel">
+    <h2>&#9881;&#65039; Archiviazione cambio corso</h2>
+    <p>Sposta tutti i dati del corso attuale (contatti, destinazioni, segretari, messaggi e registro invii di notizie) in un archivio permanente, poi svuota il foglio Contatti per il nuovo corso. Le destinazioni e i segretari attuali vengono svuotati, i codici scuola per notizie restano validi anche per il corso successivo.</p>
+    <p><strong>Dopo</strong> l'archiviazione ricordati di aggiornare "corso" e "corsoNumero" in <code>config.json</code> su GitHub con il nuovo numero.</p>
+    <div class="panel-footer">
+      <button class="ghost-btn" onclick="document.getElementById('adminOverlay').classList.remove('open')">Chiudi</button>
+      <button class="danger-btn" onclick="archiviaCorso()">Archivia e prepara nuovo corso</button>
+    </div>
+    <div id="archivioStatus"></div>
+  </div>
+</div>
 
 <div class="config-bar">
   <div class="config-inner">
@@ -379,6 +456,94 @@
     } catch(e){ /* silenzioso */ }
   }
   loadState();
+
+  // ── ADMIN: archiviazione cambio corso ────────────────────────
+  const FIREBASE_DB = 'https://quizassegnazioni-default-rtdb.europe-west1.firebasedatabase.app';
+  let corsoNumeroAttuale = '';
+
+  async function fbGetIndex(path){
+    try{
+      const r = await fetch(FIREBASE_DB + '/' + path + '.json?t=' + Date.now());
+      if(!r.ok) return null;
+      return await r.json();
+    } catch(e){ return null; }
+  }
+  async function fbSetIndex(path, data){
+    try{
+      const r = await fetch(FIREBASE_DB + '/' + path + '.json', {
+        method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(data)
+      });
+      return r.ok;
+    } catch(e){ return false; }
+  }
+  async function fbDeleteIndex(path){
+    try{
+      const r = await fetch(FIREBASE_DB + '/' + path + '.json', { method:'DELETE' });
+      return r.ok;
+    } catch(e){ return false; }
+  }
+
+  async function verificaAdmin(){
+    const s = new URLSearchParams(location.search).get('s') || '';
+    if(!s) return;
+    const cfg = await fetch('config.json?t=' + Date.now()).then(r => r.json()).catch(() => ({}));
+    if(cfg.adminCode && s === cfg.adminCode){
+      corsoNumeroAttuale = cfg.corsoNumero || '';
+      document.getElementById('adminBtn').style.display = 'flex';
+    }
+  }
+  verificaAdmin();
+
+  function apriAdminPanel(){
+    document.getElementById('archivioStatus').textContent = '';
+    document.getElementById('adminOverlay').classList.add('open');
+  }
+
+  async function archiviaCorso(){
+    const numero = corsoNumeroAttuale || prompt('Numero del corso da archiviare (es. 233):');
+    if(!numero) return;
+    if(!confirm('Questo archivier\u00e0 e SVUOTER\u00c0 il foglio Contatti, le destinazioni, i segretari e i messaggi del corso ' + numero + '. Confermi?')) return;
+    const pin = prompt('PIN di conferma:');
+    if(!pin) return;
+
+    const statusEl = document.getElementById('archivioStatus');
+    statusEl.textContent = 'Archiviazione in corso\u2026';
+
+    let resGas;
+    try{
+      const r = await fetch(GAS_URL, {
+        method:'POST',
+        headers:{ 'Content-Type':'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action:'archiviaContatti', pin: pin, corsoNumero: numero })
+      });
+      resGas = await r.json();
+    } catch(e){ resGas = { error:'errore di rete: ' + e.message }; }
+
+    if(resGas.error){
+      statusEl.textContent = '\u26A0\uFE0F Archiviazione contatti fallita: ' + resGas.error;
+      return;
+    }
+
+    const destinoDati = await fbGetIndex('qiv2/destino233');
+    if(destinoDati) await fbSetIndex('qiv2/archivio/' + numero + '/destino', destinoDati);
+    await fbDeleteIndex('qiv2/destino233');
+
+    const testoDati = await fbGetIndex('qiv2/notizie233/testo');
+    const inviiDati = await fbGetIndex('qiv2/notizie233/invii');
+    if(testoDati || inviiDati){
+      await fbSetIndex('qiv2/archivio/' + numero + '/notizie', { testo: testoDati, invii: inviiDati });
+    }
+    await fbDeleteIndex('qiv2/notizie233/testo');
+    await fbDeleteIndex('qiv2/notizie233/invii');
+
+    const indice = await fbGetIndex('qiv2/archivio/_indice') || [];
+    if(indice.indexOf(numero) === -1){
+      indice.push(numero);
+      await fbSetIndex('qiv2/archivio/_indice', indice);
+    }
+
+    statusEl.textContent = '\u2713 Corso ' + numero + ' archiviato (foglio "' + resGas.foglio + '"). Ora aggiorna "corso" e "corsoNumero" in config.json su GitHub.';
+  }
 
   function getCourseNumber(){
     return document.getElementById('corsoInput').value.trim() || '—';

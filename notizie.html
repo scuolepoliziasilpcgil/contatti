@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Notizie 233 SILP CGIL rev.2</title>
+<title>Notizie 233 SILP CGIL rev.3</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
@@ -272,6 +272,45 @@ header {
   margin:.5rem 0;
   font-size:.88rem;
 }
+
+/* ADMIN TOOLBAR */
+.admin-toolbar {
+  display:none;
+  background:#fff;
+  border-radius:8px;
+  padding:.6rem 1rem;
+  margin-bottom:.8rem;
+  gap:.7rem;
+  align-items:center;
+  flex-wrap:wrap;
+}
+.admin-toolbar select {
+  border:1px solid #ccc;
+  border-radius:8px;
+  padding:.4rem .6rem;
+  font-size:.82rem;
+  font-family:'Inter',sans-serif;
+}
+.tab-btn {
+  background:transparent;
+  border:1px solid var(--blu);
+  color:var(--blu);
+  border-radius:8px;
+  padding:.4rem .9rem;
+  font-size:.8rem;
+  font-weight:700;
+  cursor:pointer;
+}
+.tab-btn.active { background:var(--blu); color:#fff; }
+.storico-item {
+  background:#f9f9f9;
+  border:1px solid #eee;
+  border-radius:8px;
+  padding:.7rem .9rem;
+  margin-bottom:.6rem;
+}
+.storico-meta { font-size:.72rem; color:#888; margin-bottom:.35rem; font-weight:700; }
+.storico-testo { font-size:.85rem; white-space:pre-wrap; color:#333; }
 </style>
 </head>
 <body>
@@ -285,8 +324,8 @@ header {
     </div>
   </div>
   <div class="header-right">
-    <span class="rev-tag">rev.2</span>
-    <button class="icon-btn" id="settingsBtn" title="Scrivi la comunicazione">&#9881;</button>
+    <span class="rev-tag">rev.3</span>
+    <button class="icon-btn" id="settingsBtn" title="Scrivi la comunicazione" style="display:none;">&#9881;</button>
   </div>
 </header>
 
@@ -329,13 +368,31 @@ header {
   <div class="spinner-label" id="statusMsg">Caricamento contatti in corso&hellip;</div>
 </div>
 
+<!-- TOOLBAR ADMIN -->
+<div class="admin-toolbar" id="adminToolbar">
+  <select id="corsoSelect" onchange="cambiaCorsoSelezionato()"></select>
+  <button class="tab-btn active" id="tab_invia" onclick="cambiaVista('invia')">&#128172; Invia messaggi</button>
+  <button class="tab-btn" id="tab_registro" onclick="cambiaVista('registro')">&#128214; Registro invii</button>
+  <button class="tab-btn" id="tab_codici" onclick="cambiaVista('codici')">&#128273; Codici scuole</button>
+</div>
+
+<!-- OVERLAY STORICO ALLIEVO -->
+<div class="overlay" id="storicoOverlay">
+  <div class="panel">
+    <div id="storicoBox"></div>
+    <div class="panel-footer">
+      <button class="ghost-btn" onclick="document.getElementById('storicoOverlay').classList.remove('open')">Chiudi</button>
+    </div>
+  </div>
+</div>
+
 <!-- PROGRESS -->
 <div class="progress" id="progress"></div>
 
 <!-- LISTA ALLIEVI -->
 <div id="lista" style="display:none;"></div>
 
-<script>var TITLE_TEMPLATE = 'Notizie {CORSO} SILP CGIL rev.2';</script>
+<script>var TITLE_TEMPLATE = 'Notizie {CORSO} SILP CGIL rev.3';</script>
 <script src="corso-config.js"></script>
 <script>
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbxsD7KImUy2Xa9egcfWmroGzoO1DEaHZwLt4Khocc4DOtAfGmSpPRrYUWufknSeV5fgoQ/exec';
@@ -345,10 +402,23 @@ var testoCorrente = {};
 var versionHash = '';
 var invii = {};
 
+// ── ACCESSO ──────────────────────────────────────────────────
+var CODICE_S = new URLSearchParams(location.search).get('s') || '';
+var MODALITA = 'attesa'; // 'admin' | 'scuola' | 'negato'
+var SCUOLA_ASSEGNATA = '';
+var CONFIG = {};
+var CODICI_SCUOLE = {};
+var vistaAdmin = 'invia';
+var corsoSelezionato = 'attivo';
+var archiviDisponibili = [];
+var registroCorrente = {};
+
 // ── FIREBASE REALTIME DATABASE (progetto quizassegnazioni, regole aperte sotto qiv2) ──
 var FIREBASE_DB = 'https://quizassegnazioni-default-rtdb.europe-west1.firebasedatabase.app';
 var FB_PATH_TESTO = 'qiv2/notizie233/testo';
 var FB_PATH_INVII_BASE = 'qiv2/notizie233/invii';
+var FB_PATH_CODICI = 'qiv2/notizie233/codiciScuole';
+var FB_PATH_ARCHIVIO_INDICE = 'qiv2/archivio/_indice';
 
 async function fbSet(path, data) {
   try {
@@ -479,7 +549,7 @@ function render() {
   });
 
   var html = '';
-  if(scuolaFiltro) {
+  if(scuolaFiltro && MODALITA === 'admin') {
     html += '<div class="filtro-attivo">\uD83D\uDD0E Solo: <strong>' + scuolaFiltro + '</strong> &nbsp; <button class="ghost-btn" onclick="filtraScuola(null)">Mostra tutte le scuole</button></div>';
   }
 
@@ -487,7 +557,7 @@ function render() {
     if(scuolaFiltro && scuola !== scuolaFiltro) return;
     var scuolaSafe = scuola.replace(/'/g, "\\'");
     html += '<div class="scuola-label-row"><span class="scuola-label">' + scuola + '</span>';
-    if(!scuolaFiltro) html += '<button class="solo-btn" onclick="filtraScuola(\'' + scuolaSafe + '\')">Solo questa</button>';
+    if(!scuolaFiltro && MODALITA === 'admin') html += '<button class="solo-btn" onclick="filtraScuola(\'' + scuolaSafe + '\')">Solo questa</button>';
     html += '</div>';
 
     perScuola[scuola].forEach(function(c) {
@@ -552,7 +622,12 @@ function segnaInviato(chiave, btnEl, cardEl) {
     if(!c) return;
     var testoInviato = buildTesto(normalizzaNome(c.nome), normalizzaNome(c.cognome), c.scuola || 'SCUOLA NON INDICATA');
     var dataStr = new Date().toLocaleString('it-IT');
-    invii[chiave] = { data: dataStr, testo: testoInviato };
+    var mittente = MODALITA === 'admin' ? 'Admin' : (SCUOLA_ASSEGNATA || 'sconosciuto');
+    var record = {
+      data: dataStr, ts: Date.now(), testo: testoInviato, mittente: mittente,
+      nome: normalizzaNome(c.nome), cognome: normalizzaNome(c.cognome), scuola: c.scuola || 'SCUOLA NON INDICATA'
+    };
+    invii[chiave] = record;
 
     btnEl.classList.add('inviato');
     btnEl.innerHTML = '\u2713 Inviato';
@@ -565,7 +640,7 @@ function segnaInviato(chiave, btnEl, cardEl) {
       if(infoEl) infoEl.insertAdjacentHTML('beforeend', '<div class="data-invio">\u2713 Inviato il ' + dataStr + '</div>');
     }
     aggiornaProgress();
-    fbSet(FB_PATH_INVII_BASE + '/' + versionHash + '/' + chiave, invii[chiave]);
+    fbSet(FB_PATH_INVII_BASE + '/' + versionHash + '/' + chiave, record);
   }, 700);
 }
 
@@ -578,74 +653,294 @@ function aggiornaProgress() {
   el.textContent = inviati + ' / ' + conTel + ' inviati  \u2022  ' + totali + ' contatti totali  \u2022  ' + (totali - conTel) + ' senza numero';
 }
 
-// ── AVVIO: carica contatti dal backend, poi testo e invii da Firebase ──
+// ── CODICI SCUOLA ────────────────────────────────────────────
+function generaCodice4() {
+  var chars = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+  var s = '';
+  for(var i = 0; i < 4; i++) s += chars[Math.floor(Math.random() * chars.length)];
+  return s;
+}
+
+async function caricaCodiciScuole() {
+  var salvati = await fbGet(FB_PATH_CODICI) || {};
+  var scuoleAttuali = {};
+  contattiList.forEach(function(c) { scuoleAttuali[c.scuola || 'SCUOLA NON INDICATA'] = true; });
+  var usati = {};
+  Object.keys(salvati).forEach(function(sc) { usati[salvati[sc]] = true; });
+  var cambiati = false;
+  Object.keys(scuoleAttuali).forEach(function(scuola) {
+    if(!salvati[scuola]) {
+      var codice;
+      do { codice = generaCodice4(); } while(usati[codice]);
+      salvati[scuola] = codice;
+      usati[codice] = true;
+      cambiati = true;
+    }
+  });
+  CODICI_SCUOLE = salvati;
+  if(cambiati) fbSet(FB_PATH_CODICI, salvati);
+}
+
+async function risolviCodiceScuola() {
+  await caricaCodiciScuole();
+  if(!CODICE_S) { MODALITA = 'negato'; return; }
+  var trovata = Object.keys(CODICI_SCUOLE).find(function(sc) { return CODICI_SCUOLE[sc] === CODICE_S; });
+  if(trovata) { MODALITA = 'scuola'; SCUOLA_ASSEGNATA = trovata; }
+  else { MODALITA = 'negato'; }
+}
+
+function mostraAccessoNegato() {
+  document.getElementById('spinnerBox').style.display = 'none';
+  document.getElementById('progress').style.display = 'none';
+  var lista = document.getElementById('lista');
+  lista.style.display = 'block';
+  lista.innerHTML = '<div class="errore">\u26A0\uFE0F Link non valido. Chiedi il link corretto al coordinamento.</div>';
+}
+
+// ── REGISTRO INVII (solo admin) ──────────────────────────────
+async function caricaRegistro() {
+  var base = (corsoSelezionato === 'attivo') ? FB_PATH_INVII_BASE : ('qiv2/archivio/' + corsoSelezionato + '/notizie/invii');
+  var tutti = await fbGet(base) || {};
+  var perAllievo = {};
+  Object.keys(tutti).forEach(function(hash) {
+    var gruppo = tutti[hash] || {};
+    Object.keys(gruppo).forEach(function(chiave) {
+      var rec = gruppo[chiave];
+      if(!perAllievo[chiave]) perAllievo[chiave] = { nome: rec.nome, cognome: rec.cognome, scuola: rec.scuola, invii: [] };
+      perAllievo[chiave].invii.push(rec);
+    });
+  });
+  return perAllievo;
+}
+
+async function renderRegistro() {
+  var contenitore = document.getElementById('lista');
+  contenitore.style.display = 'block';
+  contenitore.innerHTML = '<div class="spinner-label">Caricamento registro\u2026</div>';
+  document.getElementById('progress').style.display = 'none';
+
+  var perAllievo = await caricaRegistro();
+  registroCorrente = perAllievo;
+
+  var roster;
+  if(corsoSelezionato === 'attivo') {
+    roster = contattiList;
+  } else {
+    var nomeFoglio = 'Contatti_archivio_' + corsoSelezionato;
+    var res = await fetch(GAS_URL + '?action=getContattiArchivio&foglio=' + encodeURIComponent(nomeFoglio))
+      .then(function(r) { return r.json(); }).catch(function() { return { contatti: [] }; });
+    roster = (res.contatti || []).map(function(c) { return { cognome: c.cognome, nome: c.nome, scuola: c.scuola || 'SCUOLA NON INDICATA' }; });
+  }
+
+  var perScuola = {};
+  var vistiRoster = {};
+  roster.forEach(function(c) {
+    var cognome = normalizzaNome(c.cognome), nome = normalizzaNome(c.nome);
+    if(!cognome && !nome) return;
+    var chiave = (cognome + '_' + nome).replace(/[^A-Z0-9_]/g,'');
+    if(vistiRoster[chiave]) return;
+    vistiRoster[chiave] = true;
+    var k = c.scuola || 'SCUOLA NON INDICATA';
+    if(!perScuola[k]) perScuola[k] = [];
+    perScuola[k].push({ chiave: chiave, cognome: cognome, nome: nome, count: (perAllievo[chiave] ? perAllievo[chiave].invii.length : 0) });
+  });
+  Object.keys(perAllievo).forEach(function(chiave) {
+    if(vistiRoster[chiave]) return;
+    var a = perAllievo[chiave];
+    var k = a.scuola || 'SCUOLA NON INDICATA';
+    if(!perScuola[k]) perScuola[k] = [];
+    perScuola[k].push({ chiave: chiave, cognome: a.cognome, nome: a.nome, count: a.invii.length });
+  });
+  Object.keys(perScuola).forEach(function(sc) {
+    perScuola[sc].sort(function(a, b) { return (a.cognome + a.nome).localeCompare(b.cognome + b.nome); });
+  });
+
+  var html = '';
+  var scuoleOrdinate = Object.keys(perScuola).sort();
+  if(!scuoleOrdinate.length) {
+    contenitore.innerHTML = '<div class="errore">Nessun dato disponibile per questo corso.</div>';
+    return;
+  }
+  scuoleOrdinate.forEach(function(scuola) {
+    html += '<div class="scuola-label-row"><span class="scuola-label">' + scuola + '</span></div>';
+    perScuola[scuola].forEach(function(a) {
+      html += '<div class="card" style="cursor:pointer;" onclick="apriStoricoAllievo(\'' + a.chiave + '\')">';
+      html += '<div class="info"><div class="nome">' + a.cognome + ' ' + a.nome + '</div></div>';
+      html += '<div style="font-weight:700; color:' + (a.count ? 'var(--verde)' : '#999') + ';">' + a.count + ' messagg' + (a.count === 1 ? 'io' : 'i') + '</div>';
+      html += '</div>';
+    });
+  });
+  contenitore.innerHTML = html;
+}
+
+function apriStoricoAllievo(chiave) {
+  var a = registroCorrente[chiave];
+  var box = document.getElementById('storicoBox');
+  if(!a || !a.invii.length) {
+    box.innerHTML = '<h2>Nessun messaggio ricevuto</h2>';
+  } else {
+    var ordinati = a.invii.slice().sort(function(x, y) { return (y.ts || 0) - (x.ts || 0); });
+    var html = '<h2>' + (a.cognome || '') + ' ' + (a.nome || '') + '</h2>';
+    ordinati.forEach(function(inv) {
+      html += '<div class="storico-item"><div class="storico-meta">' + inv.data + ' &middot; da ' + (inv.mittente || 'sconosciuto') + '</div><div class="storico-testo">' + String(inv.testo || '').replace(/</g, '&lt;') + '</div></div>';
+    });
+    box.innerHTML = html;
+  }
+  document.getElementById('storicoOverlay').classList.add('open');
+}
+
+// ── SELETTORE CORSO E TAB ADMIN ──────────────────────────────
+async function caricaArchiviDisponibili() {
+  archiviDisponibili = await fbGet(FB_PATH_ARCHIVIO_INDICE) || [];
+  var sel = document.getElementById('corsoSelect');
+  var opzioni = '<option value="attivo">Corso attivo (' + (CONFIG.corso || '233\u00b0') + ')</option>';
+  archiviDisponibili.forEach(function(n) {
+    opzioni += '<option value="' + n + '">Archivio ' + n + '\u00b0</option>';
+  });
+  sel.innerHTML = opzioni;
+}
+
+function cambiaCorsoSelezionato() {
+  corsoSelezionato = document.getElementById('corsoSelect').value;
+  var soloLettura = corsoSelezionato !== 'attivo';
+  document.getElementById('settingsBtn').style.display = soloLettura ? 'none' : 'flex';
+  if(soloLettura && vistaAdmin === 'invia') { cambiaVista('registro'); return; }
+  if(vistaAdmin === 'registro') renderRegistro();
+  else if(vistaAdmin === 'invia') render();
+}
+
+function cambiaVista(v) {
+  vistaAdmin = v;
+  document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
+  var btn = document.getElementById('tab_' + v);
+  if(btn) btn.classList.add('active');
+  if(v === 'invia') { document.getElementById('lista').style.display = 'block'; render(); }
+  else if(v === 'registro') { renderRegistro(); }
+  else if(v === 'codici') { mostraCodici(); }
+}
+
+function mostraCodici() {
+  document.getElementById('progress').style.display = 'none';
+  var lista = document.getElementById('lista');
+  lista.style.display = 'block';
+  var base = location.href.split('?')[0];
+  var html = '<div class="legenda"><strong>Codici scuola, un link per ciascun referente:</strong><br><br>';
+  Object.keys(CODICI_SCUOLE).sort().forEach(function(scuola) {
+    html += '<div style="margin-bottom:.5rem;">' + scuola + '<br><code>' + base + '?s=' + CODICI_SCUOLE[scuola] + '</code></div>';
+  });
+  html += '</div>';
+  lista.innerHTML = html;
+}
+
+// ── AVVIO ─────────────────────────────────────────────────────
 function nascondiSpinner() {
   document.getElementById('spinnerBox').style.display = 'none';
   document.getElementById('lista').style.display = 'block';
 }
 
+function caricaContatti() {
+  return new Promise(function(resolve) {
+    function tentativo(n) {
+      fetch(GAS_URL + '?action=getContatti')
+        .then(function(r) { return r.text(); })
+        .then(function(txt) {
+          var data;
+          try { data = JSON.parse(txt); }
+          catch(e) {
+            if(n < 3) {
+              document.getElementById('statusMsg').textContent = 'Backend lento a rispondere, ritento\u2026 (' + n + '/3)';
+              setTimeout(function() { tentativo(n + 1); }, 2500);
+              return;
+            }
+            document.getElementById('statusMsg').textContent = '\u26A0\uFE0F Backend non raggiunto dopo 3 tentativi.';
+            resolve();
+            return;
+          }
+          if(data.contatti) {
+            var vistiNomi = {};
+            contattiList = [];
+            data.contatti.forEach(function(c) {
+              var tel = normalizzaTel(c.tel);
+              var chiaveNome = normalizzaNome(c.cognome) + '|' + normalizzaNome(c.nome);
+              if(!(c.cognome || c.nome)) return;
+              if(!vistiNomi[chiaveNome]) {
+                vistiNomi[chiaveNome] = true;
+                contattiList.push({ cognome: c.cognome, nome: c.nome, scuola: c.scuola || 'SCUOLA NON INDICATA', tel: tel });
+              } else if(tel) {
+                var esistente = contattiList.find(function(x) {
+                  return (normalizzaNome(x.cognome) + '|' + normalizzaNome(x.nome)) === chiaveNome;
+                });
+                if(esistente && !esistente.tel) esistente.tel = tel;
+              }
+            });
+            document.getElementById('statusMsg').textContent = '\u2713 ' + contattiList.length + ' contatti caricati.';
+            resolve();
+          } else {
+            document.getElementById('statusMsg').textContent = '\u26A0\uFE0F Errore: ' + JSON.stringify(data);
+            resolve();
+          }
+        })
+        .catch(function(err) {
+          if(n < 3) {
+            document.getElementById('statusMsg').textContent = 'Backend lento a rispondere, ritento\u2026 (' + n + '/3)';
+            setTimeout(function() { tentativo(n + 1); }, 2500);
+            return;
+          }
+          document.getElementById('statusMsg').textContent = '\u26A0\uFE0F Backend non raggiunto: ' + err.message;
+          resolve();
+        });
+    }
+    tentativo(1);
+  });
+}
+
 function caricaTestoEInvii() {
-  fbGet(FB_PATH_TESTO).then(function(t) {
+  return fbGet(FB_PATH_TESTO).then(function(t) {
     testoCorrente = (t && t.principale) ? t : { principale: DEFAULT_PRINCIPALE, firma: DEFAULT_FIRMA };
     versionHash = hashTesto((testoCorrente.principale || '') + '||' + (testoCorrente.firma || ''));
-    fbGet(FB_PATH_INVII_BASE + '/' + versionHash).then(function(inv) {
+    return fbGet(FB_PATH_INVII_BASE + '/' + versionHash).then(function(inv) {
       invii = inv || {};
-      nascondiSpinner();
-      render();
     });
   });
 }
 
-function fetchContattiConRetry(tentativo) {
-  tentativo = tentativo || 1;
-  fetch(GAS_URL + '?action=getContatti')
-    .then(function(r) { return r.text(); })
-    .then(function(txt) {
-      var data;
-      try { data = JSON.parse(txt); }
-      catch(e) {
-        if(tentativo < 3) {
-          document.getElementById('statusMsg').textContent = 'Backend lento a rispondere, ritento\u2026 (' + tentativo + '/3)';
-          setTimeout(function(){ fetchContattiConRetry(tentativo + 1); }, 2500);
-          return;
-        }
-        document.getElementById('statusMsg').textContent = '\u26A0\uFE0F Backend non raggiunto dopo 3 tentativi: risposta non valida.';
-        return;
-      }
-      if(data.contatti) {
-        var vistiNomi = {};
-        contattiList = [];
-        data.contatti.forEach(function(c) {
-          var tel = normalizzaTel(c.tel);
-          var chiaveNome = normalizzaNome(c.cognome) + '|' + normalizzaNome(c.nome);
-          if(!(c.cognome || c.nome)) return;
-          if(!vistiNomi[chiaveNome]) {
-            vistiNomi[chiaveNome] = true;
-            contattiList.push({ cognome: c.cognome, nome: c.nome, scuola: c.scuola || 'SCUOLA NON INDICATA', tel: tel });
-          } else if(tel) {
-            var esistente = contattiList.find(function(x) {
-              return (normalizzaNome(x.cognome) + '|' + normalizzaNome(x.nome)) === chiaveNome;
-            });
-            if(esistente && !esistente.tel) esistente.tel = tel;
-          }
-        });
-        document.getElementById('statusMsg').textContent = '\u2713 ' + contattiList.length + ' contatti caricati.';
-        caricaTestoEInvii();
-      } else {
-        document.getElementById('statusMsg').textContent = '\u26A0\uFE0F Errore: ' + JSON.stringify(data);
-      }
-    })
-    .catch(function(err) {
-      if(tentativo < 3) {
-        document.getElementById('statusMsg').textContent = 'Backend lento a rispondere, ritento\u2026 (' + tentativo + '/3)';
-        setTimeout(function(){ fetchContattiConRetry(tentativo + 1); }, 2500);
-        return;
-      }
-      document.getElementById('statusMsg').textContent = '\u26A0\uFE0F Backend non raggiunto: ' + err.message;
-    });
+async function avvia() {
+  CONFIG = await fetch('config.json?t=' + Date.now()).then(function(r) { return r.json(); }).catch(function() { return {}; });
+
+  if(CODICE_S && CONFIG.adminCode && CODICE_S === CONFIG.adminCode) {
+    MODALITA = 'admin';
+  }
+
+  await caricaContatti();
+
+  if(MODALITA === 'admin') {
+    await caricaCodiciScuole();
+  } else {
+    await risolviCodiceScuola();
+  }
+
+  if(MODALITA === 'attesa') MODALITA = 'negato';
+
+  if(MODALITA === 'negato') {
+    mostraAccessoNegato();
+    return;
+  }
+
+  if(MODALITA === 'admin') {
+    document.getElementById('settingsBtn').style.display = 'flex';
+    document.getElementById('adminToolbar').style.display = 'flex';
+    await caricaArchiviDisponibili();
+  } else {
+    scuolaFiltro = SCUOLA_ASSEGNATA;
+  }
+
+  await caricaTestoEInvii();
+  nascondiSpinner();
+  render();
 }
 
-fetchContattiConRetry();
+avvia();
+
 </script>
 </body>
 </html>
