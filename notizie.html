@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Notizie 233 SILP CGIL rev.6</title>
+<title>Notizie 233 SILP CGIL</title>
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="icon" type="image/x-icon" href="favicon.ico">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -327,7 +327,7 @@ header {
     </div>
   </div>
   <div class="header-right">
-    <span class="rev-tag">rev.6</span>
+    <span class="rev-tag">rev.7</span>
     <button class="icon-btn" id="settingsBtn" title="Scrivi la comunicazione" style="display:none;">&#9881;</button>
   </div>
 </header>
@@ -400,7 +400,7 @@ header {
 <!-- LISTA ALLIEVI -->
 <div id="lista" style="display:none;"></div>
 
-<script>var TITLE_TEMPLATE = 'Notizie {CORSO} SILP CGIL rev.6';</script>
+<script>var TITLE_TEMPLATE = 'Notizie {CORSO} SILP CGIL';</script>
 <script src="corso-config.js"></script>
 <script>
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbxsD7KImUy2Xa9egcfWmroGzoO1DEaHZwLt4Khocc4DOtAfGmSpPRrYUWufknSeV5fgoQ/exec';
@@ -465,6 +465,16 @@ function normalizzaTel(tel) {
 
 function normalizzaNome(s) {
   return String(s || '').trim().toUpperCase().replace(/\s+/g,' ');
+}
+
+// "Istituto per ispettori di Nettuno" -> "Nettuno - Istituto per ispettori"
+function formattaScuolaPerTitolo(scuola) {
+  var s = String(scuola || '').trim();
+  var idx = s.lastIndexOf(' di ');
+  if(idx === -1) return s;
+  var tipo = s.slice(0, idx);
+  var citta = s.slice(idx + 4);
+  return citta + ' - ' + tipo;
 }
 
 function hashTesto(s) {
@@ -1007,7 +1017,7 @@ async function avvia() {
   } else {
     scuolaFiltro = SCUOLA_ASSEGNATA;
     document.getElementById('settingsBtn').style.display = 'flex';
-    document.title = document.title + ' \u00b7 ' + SCUOLA_ASSEGNATA;
+    document.title = document.title + ' \u00b7 ' + formattaScuolaPerTitolo(SCUOLA_ASSEGNATA);
   }
 
   await caricaTestiEInvii();
