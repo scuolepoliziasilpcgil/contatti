@@ -384,6 +384,37 @@ var GAS_URL = 'https://script.google.com/macros/s/AKfycbxsD7KImUy2Xa9egcfWmroGzo
 var KEY_INVIATI = 'destino233_inviati';
 var KEY_MSG = 'destino233_msg';
 
+// ── MAPPA PROVINCIA -> REGIONE per fallback segretario regionale ──
+var PROVINCIA_REGIONE = {
+  'CHIETI':'ABRUZZO',"L'AQUILA":'ABRUZZO','PESCARA':'ABRUZZO','TERAMO':'ABRUZZO',
+  'MATERA':'BASILICATA','POTENZA':'BASILICATA',
+  'CATANZARO':'CALABRIA','COSENZA':'CALABRIA','CROTONE':'CALABRIA','REGGIO CALABRIA':'CALABRIA','VIBO VALENTIA':'CALABRIA',
+  'AVELLINO':'CAMPANIA','BENEVENTO':'CAMPANIA','CASERTA':'CAMPANIA','NAPOLI':'CAMPANIA','SALERNO':'CAMPANIA',
+  'BOLOGNA':'EMILIA ROMAGNA','FERRARA':'EMILIA ROMAGNA',"FORLI' - CESENA":'EMILIA ROMAGNA','MODENA':'EMILIA ROMAGNA',
+  'PARMA':'EMILIA ROMAGNA','PIACENZA':'EMILIA ROMAGNA','RAVENNA':'EMILIA ROMAGNA','REGGIO EMILIA':'EMILIA ROMAGNA','RIMINI':'EMILIA ROMAGNA',
+  'GORIZIA':'FRIULI VENEZIA GIULIA','PORDENONE':'FRIULI VENEZIA GIULIA','TRIESTE':'FRIULI VENEZIA GIULIA','UDINE':'FRIULI VENEZIA GIULIA',
+  'FROSINONE':'LAZIO','LATINA':'LAZIO','RIETI':'LAZIO','ROMA':'LAZIO','VITERBO':'LAZIO',
+  'GENOVA':'LIGURIA','IMPERIA':'LIGURIA','LA SPEZIA':'LIGURIA','SAVONA':'LIGURIA',
+  'BERGAMO':'LOMBARDIA','BRESCIA':'LOMBARDIA','COMO':'LOMBARDIA','CREMONA':'LOMBARDIA',
+  'LECCO':'LOMBARDIA','LODI':'LOMBARDIA','MANTOVA':'LOMBARDIA','MILANO':'LOMBARDIA',
+  'MONZA-BRIANZA':'LOMBARDIA','PAVIA':'LOMBARDIA','SONDRIO':'LOMBARDIA','VARESE':'LOMBARDIA',
+  'ANCONA':'MARCHE','ASCOLI PICENO':'MARCHE','FERMO':'MARCHE','MACERATA':'MARCHE','PESARO - URBINO':'MARCHE',
+  'CAMPOBASSO':'MOLISE','ISERNIA':'MOLISE',
+  'ALESSANDRIA':'PIEMONTE','ASTI':'PIEMONTE','BIELLA':'PIEMONTE','CUNEO':'PIEMONTE',
+  'NOVARA':'PIEMONTE','TORINO':'PIEMONTE','VERBANIA':'PIEMONTE','VERCELLI':'PIEMONTE',
+  'BARI':'PUGLIA','BRINDISI':'PUGLIA','FOGGIA':'PUGLIA','LECCE':'PUGLIA','TARANTO':'PUGLIA','BAT':'PUGLIA',
+  'CAGLIARI':'SARDEGNA','NUORO':'SARDEGNA','ORISTANO':'SARDEGNA','SASSARI':'SARDEGNA',
+  'AGRIGENTO':'SICILIA','CALTANISSETTA':'SICILIA','CATANIA':'SICILIA','ENNA':'SICILIA',
+  'MESSINA':'SICILIA','PALERMO':'SICILIA','RAGUSA':'SICILIA','SIRACUSA':'SICILIA','TRAPANI':'SICILIA',
+  'AREZZO':'TOSCANA','FIRENZE':'TOSCANA','GROSSETO':'TOSCANA','LIVORNO':'TOSCANA',
+  'LUCCA':'TOSCANA','MASSA CARRARA':'TOSCANA','PISA':'TOSCANA','PISTOIA':'TOSCANA','PRATO':'TOSCANA','SIENA':'TOSCANA',
+  'BOLZANO':'TRENTINO ALTO ADIGE','TRENTO':'TRENTINO ALTO ADIGE',
+  'PERUGIA':'UMBRIA','TERNI':'UMBRIA',
+  'AOSTA':"VALLE D'AOSTA",
+  'BELLUNO':'VENETO','PADOVA':'VENETO','ROVIGO':'VENETO','TREVISO':'VENETO',
+  'VENEZIA':'VENETO','VERONA':'VENETO','VICENZA':'VENETO'
+};
+
 // ── PROVINCE NOTE DAL FILE POSTI 233° ───────────────────────
 // Mappa parole chiave nei nomi reparto -> provincia SILP
 var PROVINCE_MAP = {
@@ -500,7 +531,7 @@ function normalizzaNome(s) {
 
 function buildMsg(nome, reparto, provincia) {
   var provKey = (provincia || estraiProvincia(reparto)).toUpperCase();
-  var seg = SEGRETARI[provKey];
+  var seg = SEGRETARI[provKey] || SEGRETARI[PROVINCIA_REGIONE[provKey] || ''];
   var segFrase;
   if(seg && seg.nome) {
     segFrase = getMsgSegretario()
@@ -586,8 +617,10 @@ function render() {
       var isInviato = !!inv[a.chiave];
       var tel = a.tel;
       var provKey = (a.provincia || estraiProvincia(a.reparto)).toUpperCase();
-      var seg = SEGRETARI[provKey];
-      var segInfo = seg && seg.nome ? ('Segretario: ' + seg.nome + (seg.tel ? ' \u2022 +' + seg.tel : '')) : 'Segretario non ancora inserito';
+      var seg = SEGRETARI[provKey] || SEGRETARI[PROVINCIA_REGIONE[provKey] || ''];
+      var segInfo = seg && seg.nome
+        ? ('Segretario: ' + seg.nome + (seg.tel ? ' \u2022 +' + seg.tel : ''))
+        : 'Segretario non ancora inserito';
       var waLink = tel ? ('https://wa.me/' + tel + '?text=' + buildMsg(a.nome, a.reparto, a.provincia)) : '';
       var safeChiave = a.chiave.replace(/'/g, "\\'");
 
