@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Destinazioni 233 SILP CGIL rev.18</title>
+<title>Destinazioni 233 SILP CGIL rev.19</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
@@ -311,7 +311,7 @@ input[type=file] { display:none; }
     </div>
   </div>
   <div class="header-right">
-    <span class="rev-tag">rev.18</span>
+    <span class="rev-tag">rev.19</span>
     <button class="icon-btn" id="settingsBtn" title="Modifica messaggio">&#9881;</button>
   </div>
 </header>
@@ -937,55 +937,78 @@ function mostraUpload() {
   document.getElementById('uploadBox').style.display = 'block';
 }
 
-fetch(GAS_URL + '?action=getContatti')
-  .then(function(r) { return r.json(); })
-  .then(function(data) {
-    if(data.contatti) {
-      var visti = {};
-      data.contatti.forEach(function(c) {
-        var tel = normalizzaTel(c.tel);
-        if(!tel || visti[tel]) return;
-        visti[tel] = true;
-        contatti[normalizzaNome(c.cognome) + '|' + normalizzaNome(c.nome)] = tel;
-        contatti[normalizzaNome(c.cognome)] = tel;
-      });
-      var nContatti = Object.keys(visti).length;
-      document.getElementById('gasStatus').textContent = '\u2713 ' + nContatti + ' contatti caricati.';
-
-      // Carica segretari da GitHub
-      githubLoad(GITHUB_FILE_SEG).then(function(seg) {
-        if(seg && Object.keys(seg).length) {
-          Object.assign(SEGRETARI, seg);
-          document.getElementById('segretariStatus').textContent = '\u2713 ' + Object.keys(seg).length + ' segretari da GitHub';
-          document.getElementById('eliminaSegBtn').style.display = 'inline-block';
+function fetchContattiConRetry(tentativo) {
+  tentativo = tentativo || 1;
+  fetch(GAS_URL + '?action=getContatti')
+    .then(function(r) { return r.text(); })
+    .then(function(txt) {
+      var data;
+      try { data = JSON.parse(txt); }
+      catch(e) {
+        if(tentativo < 3) {
+          document.getElementById('gasStatus').textContent = 'Backend lento a rispondere, ritento\u2026 (' + tentativo + '/3)';
+          setTimeout(function(){ fetchContattiConRetry(tentativo + 1); }, 2500);
+          return;
         }
-      });
+        mostraUpload();
+        document.getElementById('gasStatus').textContent = '\u26A0\uFE0F Backend non raggiunto dopo 3 tentativi: risposta non valida.';
+        return;
+      }
+      if(data.contatti) {
+        var visti = {};
+        data.contatti.forEach(function(c) {
+          var tel = normalizzaTel(c.tel);
+          if(!tel || visti[tel]) return;
+          visti[tel] = true;
+          contatti[normalizzaNome(c.cognome) + '|' + normalizzaNome(c.nome)] = tel;
+          contatti[normalizzaNome(c.cognome)] = tel;
+        });
+        var nContatti = Object.keys(visti).length;
+        document.getElementById('gasStatus').textContent = '\u2713 ' + nContatti + ' contatti caricati.';
 
-      // Carica destinazioni da GitHub
-      githubLoad(GITHUB_FILE_DEST).then(function(dest) {
-        if(dest && dest.length) {
-          allAllievi = dest.map(function(a) {
-            return Object.assign({}, a, { tel: contatti[a.cognome+'|'+a.nome] || contatti[a.cognome] || a.tel || '' });
-          });
-          nascondiSpinner();
-          document.getElementById('uploadBox').style.display = 'none';
-          document.getElementById('toolbar').classList.add('visible');
-          document.getElementById('gasStatus').textContent = '\u2713 ' + nContatti + ' contatti \u2014 \u2713 ' + allAllievi.length + ' destinazioni da GitHub.';
-          render();
-        } else {
-          mostraUpload();
-          document.getElementById('gasStatus').textContent = '\u2713 ' + nContatti + ' contatti caricati. Ora carica il file destinazioni.';
-        }
-      }).catch(function(){ mostraUpload(); });
-    } else {
+        // Carica segretari da GitHub
+        githubLoad(GITHUB_FILE_SEG).then(function(seg) {
+          if(seg && Object.keys(seg).length) {
+            Object.assign(SEGRETARI, seg);
+            document.getElementById('segretariStatus').textContent = '\u2713 ' + Object.keys(seg).length + ' segretari da GitHub';
+            document.getElementById('eliminaSegBtn').style.display = 'inline-block';
+          }
+        });
+
+        // Carica destinazioni da GitHub
+        githubLoad(GITHUB_FILE_DEST).then(function(dest) {
+          if(dest && dest.length) {
+            allAllievi = dest.map(function(a) {
+              return Object.assign({}, a, { tel: contatti[a.cognome+'|'+a.nome] || contatti[a.cognome] || a.tel || '' });
+            });
+            nascondiSpinner();
+            document.getElementById('uploadBox').style.display = 'none';
+            document.getElementById('toolbar').classList.add('visible');
+            document.getElementById('gasStatus').textContent = '\u2713 ' + nContatti + ' contatti \u2014 \u2713 ' + allAllievi.length + ' destinazioni da GitHub.';
+            render();
+          } else {
+            mostraUpload();
+            document.getElementById('gasStatus').textContent = '\u2713 ' + nContatti + ' contatti caricati. Ora carica il file destinazioni.';
+          }
+        }).catch(function(){ mostraUpload(); });
+      } else {
+        mostraUpload();
+        document.getElementById('gasStatus').textContent = '\u26A0\uFE0F Errore: ' + JSON.stringify(data);
+      }
+    })
+    .catch(function(err) {
+      if(tentativo < 3) {
+        document.getElementById('gasStatus').textContent = 'Backend lento a rispondere, ritento\u2026 (' + tentativo + '/3)';
+        setTimeout(function(){ fetchContattiConRetry(tentativo + 1); }, 2500);
+        return;
+      }
       mostraUpload();
-      document.getElementById('gasStatus').textContent = '\u26A0\uFE0F Errore: ' + JSON.stringify(data);
-    }
-  })
-  .catch(function(err) {
-    mostraUpload();
-    document.getElementById('gasStatus').textContent = '\u26A0\uFE0F Backend non raggiunto: ' + err.message;
-  });
+      document.getElementById('gasStatus').textContent = '\u26A0\uFE0F Backend non raggiunto: ' + err.message;
+    });
+}
+
+fetchContattiConRetry();
+
 </script>
 </body>
 </html>
