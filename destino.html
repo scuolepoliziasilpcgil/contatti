@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Destinazioni 233 SILP CGIL rev.6</title>
+<title>Destinazioni 233 SILP CGIL rev.7</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
@@ -307,7 +307,7 @@ input[type=file] { display:none; }
     </div>
   </div>
   <div class="header-right">
-    <span class="rev-tag">rev.6</span>
+    <span class="rev-tag">rev.7</span>
     <button class="icon-btn" id="settingsBtn" title="Modifica messaggio">&#9881;</button>
   </div>
 </header>
@@ -382,6 +382,9 @@ input[type=file] { display:none; }
 <script>
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbxsD7KImUy2Xa9egcfWmroGzoO1DEaHZwLt4Khocc4DOtAfGmSpPRrYUWufknSeV5fgoQ/exec';
 var KEY_INVIATI = 'destino233_inviati';
+var SEGRETARI = {};
+var allAllievi = [];
+var contatti = {};
 var KEY_MSG = 'destino233_msg';
 
 // ── MAPPA PROVINCIA -> REGIONE per fallback segretario regionale ──
@@ -470,8 +473,6 @@ function estraiProvincia(reparto) {
   });
   return parole.length ? parole[0] : '';
 }
-var allAllievi = [];
-var contatti = {};
 
 // ── MESSAGGI DEFAULT ─────────────────────────────────────────
 var DEFAULT_PRINCIPALE = 'Ciao {NOME}, \u00e8 arrivata la tua destinazione: {REPARTO}! \uD83C\uDF89\nFinalmente ci siamo. Spero che sia la destinazione che speravi, o almeno una che ti dar\u00e0 l\u2019opportunit\u00e0 di crescere e fare bene.\nDa oggi fai parte di una realt\u00e0 concreta e noi del SILP CGIL siamo l\u00ec con te. {SEGRETARIO_MSG}\nNel frattempo se hai dubbi, domande o semplicemente vuoi capire cosa ti aspetta, scrivici senza pensarci.\nIn bocca al lupo e benvenuto/a nella famiglia SILP CGIL. \uD83C\uDF40\n{FIRMA}';
