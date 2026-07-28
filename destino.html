@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Destinazioni 233 SILP CGIL rev.21</title>
+<title>Destinazioni 233 SILP CGIL rev.23</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
@@ -311,7 +311,7 @@ input[type=file] { display:none; }
     </div>
   </div>
   <div class="header-right">
-    <span class="rev-tag">rev.21</span>
+    <span class="rev-tag">rev.23</span>
     <button class="icon-btn" id="settingsBtn" title="Modifica messaggio">&#9881;</button>
   </div>
 </header>
@@ -321,13 +321,7 @@ input[type=file] { display:none; }
   <div class="panel">
     <h2>&#9999;&#65039; Impostazioni</h2>
 
-    <span class="field-label">Token GitHub (solo per chi carica i file)</span>
-    <div style="display:flex; gap:.5rem; align-items:center; margin-bottom:.3rem;">
-      <input type="password" id="githubToken" placeholder="ghp_..." style="flex:1;">
-      <button class="primary-btn" onclick="salvaToken()" style="white-space:nowrap;">Salva token</button>
-      <button class="ghost-btn" onclick="rimuoviToken()" style="white-space:nowrap;">Rimuovi token</button>
-    </div>
-    <p style="font-size:.73rem; color:#888; margin-bottom:.5rem;">Serve solo al dispositivo che carica i file. Gli altri leggono automaticamente senza token. Il token rimane salvato nel tuo browser.</p>
+    <p style="font-size:.73rem; color:#888; margin-bottom:.5rem;">I dati destinazioni e segretari sono salvati su Firebase (database condiviso), visibili subito a tutti senza bisogno di token o PIN.</p>
 
     <hr style="border:none; border-top:1px solid #eee; margin:1rem 0;">
 
@@ -511,35 +505,6 @@ function getMsgSegretario() { return getMsg().segretario || DEFAULT_SEGRETARIO; 
 function getMsgGenerica() { return getMsg().generica || DEFAULT_GENERICA; }
 function getMsgFirma() { return getMsg().firma || DEFAULT_FIRMA; }
 
-var GITHUB_REPO = 'scuolepoliziasilpcgil/contatti';
-var GITHUB_FILE_DEST = 'data_destinazioni.json';
-var GITHUB_FILE_SEG  = 'data_segretari.json';
-var KEY_TOKEN = 'destino233_ghtoken';
-
-function getToken(){ return localStorage.getItem(KEY_TOKEN) || ''; }
-
-function salvaToken() {
-  var token = document.getElementById('githubToken').value.trim();
-  if(token) {
-    localStorage.setItem(KEY_TOKEN, token);
-    document.getElementById('githubToken').value = '';
-    document.getElementById('githubToken').placeholder = 'Token salvato (\u2022\u2022\u2022\u2022' + token.slice(-4) + ') \u2014 lascia vuoto per non cambiarlo';
-    alert('\u2713 Token salvato.');
-  } else if(getToken()) {
-    alert('Campo vuoto: il token salvato in precedenza non \u00e8 stato modificato. Per rimuoverlo usa "Rimuovi token".');
-  } else {
-    alert('Nessun token inserito.');
-  }
-}
-
-function rimuoviToken() {
-  if(!confirm('Rimuovere il token GitHub salvato?')) return;
-  localStorage.removeItem(KEY_TOKEN);
-  document.getElementById('githubToken').value = '';
-  document.getElementById('githubToken').placeholder = 'ghp_...';
-  alert('Token rimosso.');
-}
-
 function salvaMsg() {
   var m = {
     principale: document.getElementById('msgPrincipale').value.trim() || DEFAULT_PRINCIPALE,
@@ -552,11 +517,6 @@ function salvaMsg() {
 }
 
 function apriPannello() {
-  var saved = getToken();
-  document.getElementById('githubToken').value = '';
-  document.getElementById('githubToken').placeholder = saved
-    ? ('Token salvato (\u2022\u2022\u2022\u2022' + saved.slice(-4) + ') \u2014 lascia vuoto per non cambiarlo')
-    : 'ghp_...';
   document.getElementById('msgPrincipale').value = getMsgPrincipale();
   document.getElementById('msgSegretario').value = getMsgSegretario();
   document.getElementById('msgGenerica').value = getMsgGenerica();
@@ -564,87 +524,47 @@ function apriPannello() {
   document.getElementById('msgOverlay').classList.add('open');
 }
 
-// ── GITHUB API ───────────────────────────────────────────────
-async function githubGetSHA(filename) {
-  var token = getToken();
-  if(!token) return null;
-  try {
-    var r = await fetch('https://api.github.com/repos/' + GITHUB_REPO + '/contents/' + filename, {
-      headers: { 'Authorization': 'token ' + token, 'Accept': 'application/vnd.github.v3+json' }
-    });
-    if(r.status === 404) return '';
-    if(!r.ok) {
-      var errBody = {};
-      try { errBody = await r.json(); } catch(e3) {}
-      var err = new Error('HTTP ' + r.status + (errBody.message ? ' \u2014 ' + errBody.message : ''));
-      err.httpStatus = r.status;
-      throw err;
-    }
-    var d = await r.json();
-    return d.sha || '';
-  } catch(e) {
-    if(e && e.httpStatus) throw e;
-    return null;
-  }
-}
+// ── FIREBASE REALTIME DATABASE (progetto quizassegnazioni, regole aperte) ──
+var FIREBASE_DB = 'https://quizassegnazioni-default-rtdb.europe-west1.firebasedatabase.app';
+var FB_PATH_DEST = 'destino233/destinazioni';
+var FB_PATH_SEG  = 'destino233/segretari';
 
-async function githubSave(filename, data) {
-  var token = getToken();
-  if(!token) return false;
+async function fbSet(path, data) {
   try {
-    var sha = await githubGetSHA(filename);
-    if(sha === null) return false;
-    var content = btoa(unescape(encodeURIComponent(JSON.stringify(data))));
-    var body = { message: 'Aggiornamento ' + filename, content: content };
-    if(sha) body.sha = sha;
-    var r = await fetch('https://api.github.com/repos/' + GITHUB_REPO + '/contents/' + filename, {
+    var r = await fetch(FIREBASE_DB + '/' + path + '.json', {
       method: 'PUT',
-      headers: {
-        'Authorization': 'token ' + token,
-        'Accept': 'application/vnd.github.v3+json',
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(body)
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
     });
-    return r.ok;
-  } catch(e) { return false; }
+    if(r.ok) return { ok:true };
+    var errBody = '';
+    try { var j = await r.json(); errBody = j.error || ''; } catch(e2) {}
+    return { ok:false, detail:'HTTP ' + r.status + (errBody ? ' \u2014 ' + errBody : '') };
+  } catch(e) { return { ok:false, detail:'errore di rete: ' + e.message }; }
 }
 
-async function githubLoad(filename) {
+async function fbDelete(path) {
   try {
-    var r = await fetch('https://raw.githubusercontent.com/' + GITHUB_REPO + '/main/' + filename + '?t=' + Date.now());
+    var r = await fetch(FIREBASE_DB + '/' + path + '.json', { method: 'DELETE' });
+    if(r.ok) return { ok:true };
+    var errBody = '';
+    try { var j = await r.json(); errBody = j.error || ''; } catch(e2) {}
+    return { ok:false, detail:'HTTP ' + r.status + (errBody ? ' \u2014 ' + errBody : '') };
+  } catch(e) { return { ok:false, detail:'errore di rete: ' + e.message }; }
+}
+
+async function fbGet(path) {
+  try {
+    var r = await fetch(FIREBASE_DB + '/' + path + '.json?t=' + Date.now());
     if(!r.ok) return null;
     return await r.json();
   } catch(e) { return null; }
 }
 
-async function githubDelete(filename) {
-  var token = getToken();
-  if(!token) return { ok:false, detail:'nessun token salvato' };
-  try {
-    var sha;
-    try {
-      sha = await githubGetSHA(filename);
-    } catch(shaErr) {
-      return { ok:false, detail:'lettura sha fallita \u2014 ' + shaErr.message };
-    }
-    if(sha === null) return { ok:false, detail:'errore di rete durante la lettura dello sha' };
-    if(!sha) return { ok:true, detail:'file gi\u00e0 assente su GitHub' };
-    var r = await fetch('https://api.github.com/repos/' + GITHUB_REPO + '/contents/' + filename, {
-      method: 'DELETE',
-      headers: {
-        'Authorization': 'token ' + token,
-        'Accept': 'application/vnd.github.v3+json',
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ message: 'Eliminazione ' + filename, sha: sha })
-    });
-    if(r.ok) return { ok:true, detail:'' };
-    var errBody = '';
-    try { var j = await r.json(); errBody = j.message || ''; } catch(e2) {}
-    return { ok:false, detail:'HTTP ' + r.status + (errBody ? ' \u2014 ' + errBody : '') };
-  } catch(e) { return { ok:false, detail:'errore di rete: ' + e.message }; }
-}
+async function salvaDestinazioniSuFirebase(allievi) { return fbSet(FB_PATH_DEST, allievi); }
+async function eliminaDestinazioniSuFirebase() { return fbDelete(FB_PATH_DEST); }
+async function salvaSegretariSuFirebase(segretari) { return fbSet(FB_PATH_SEG, segretari); }
+async function eliminaSegretariSuFirebase() { return fbDelete(FB_PATH_SEG); }
 
 document.getElementById('settingsBtn').addEventListener('click', apriPannello);
 
@@ -835,15 +755,13 @@ function processaFileDestinazioni(file) {
     document.getElementById('toolbar').classList.add('visible');
     render();
 
-    // Salva su GitHub se token disponibile
-    if(getToken()) {
-      document.getElementById('gasStatus').textContent = 'Salvataggio su GitHub\u2026';
-      githubSave(GITHUB_FILE_DEST, allAllievi).then(function(ok) {
-        document.getElementById('gasStatus').textContent = ok
-          ? '\u2713 File destinazioni salvato su GitHub. Gli altri possono aggiornare la pagina.'
-          : '\u26A0\uFE0F Salvataggio GitHub fallito. Controlla il token nel pannello \u2699\uFE0F';
-      });
-    }
+    // Salva su Firebase
+    document.getElementById('gasStatus').textContent = 'Salvataggio in corso\u2026';
+    salvaDestinazioniSuFirebase(allAllievi).then(function(res) {
+      document.getElementById('gasStatus').textContent = res.ok
+        ? '\u2713 File destinazioni salvato. Gli altri possono aggiornare la pagina.'
+        : '\u26A0\uFE0F Salvataggio fallito: ' + res.detail;
+    });
     } catch(err) {
       document.getElementById('lista').innerHTML = '<div class="errore">Errore lettura file: ' + err.message + '</div>';
     }
@@ -867,11 +785,11 @@ async function eliminaFile() {
   document.getElementById('fileInput').value = '';
   document.getElementById('gasStatus').textContent = 'Eliminazione in corso\u2026';
 
-  var res = await githubDelete(GITHUB_FILE_DEST);
+  var res = await eliminaDestinazioniSuFirebase();
   var prefisso = contattiCaricati ? ('\u2713 ' + contattiCaricati + ' contatti caricati. ') : '';
   document.getElementById('gasStatus').textContent = res.ok
     ? (prefisso + 'File eliminato. Carica il nuovo file destinazioni.')
-    : (prefisso + 'File eliminato localmente, ma la cancellazione su GitHub non \u00e8 riuscita (' + res.detail + ').');
+    : (prefisso + 'File eliminato localmente, ma la cancellazione sul server non \u00e8 riuscita (' + res.detail + ').');
 }
 
 // ── CARICA FILE SEGRETARI ────────────────────────────────────
@@ -930,11 +848,11 @@ document.getElementById('fileSegretari').addEventListener('change', function(e) 
       document.getElementById('eliminaSegBtn').style.display = 'inline-block';
       if(allAllievi.length) render();
 
-      // Salva su GitHub se token disponibile
-      if(trovati > 0 && getToken()) {
-        githubSave(GITHUB_FILE_SEG, SEGRETARI).then(function(ok) {
-          if(!ok) document.getElementById('segretariStatus').textContent += ' \u2014 \u26A0\uFE0F salvataggio GitHub fallito';
-          else document.getElementById('segretariStatus').textContent += ' \u2014 \u2713 salvati su GitHub';
+      // Salva su Firebase
+      if(trovati > 0) {
+        salvaSegretariSuFirebase(SEGRETARI).then(function(res) {
+          if(!res.ok) document.getElementById('segretariStatus').textContent += ' \u2014 \u26A0\uFE0F salvataggio fallito: ' + res.detail;
+          else document.getElementById('segretariStatus').textContent += ' \u2014 \u2713 salvati';
         });
       }
     } catch(err) {
@@ -952,13 +870,13 @@ async function eliminaSegretari() {
   if(allAllievi.length) render();
   document.getElementById('segretariStatus').textContent = 'Eliminazione in corso\u2026';
 
-  var res = await githubDelete(GITHUB_FILE_SEG);
+  var res = await eliminaSegretariSuFirebase();
   document.getElementById('segretariStatus').textContent = res.ok
     ? 'Nessun file caricato \u2014 verr\u00e0 usata la frase generica'
-    : 'Nessun file caricato \u2014 verr\u00e0 usata la frase generica (cancellazione su GitHub non riuscita: ' + res.detail + ')';
+    : 'Nessun file caricato \u2014 verr\u00e0 usata la frase generica (cancellazione sul server non riuscita: ' + res.detail + ')';
 }
 
-// ── AVVIO: carica contatti GAS e poi dati da GitHub ──────────
+// ── AVVIO: carica contatti GAS e dati destinazioni/segretari ─
 document.getElementById('segretariStatus').textContent = 'Nessun file caricato \u2014 verr\u00e0 usata la frase generica';
 
 function nascondiSpinner() {
@@ -1000,17 +918,17 @@ function fetchContattiConRetry(tentativo) {
         contattiCaricati = nContatti;
         document.getElementById('gasStatus').textContent = '\u2713 ' + nContatti + ' contatti caricati.';
 
-        // Carica segretari da GitHub
-        githubLoad(GITHUB_FILE_SEG).then(function(seg) {
+        // Carica segretari da Firebase
+        fbGet(FB_PATH_SEG).then(function(seg) {
           if(seg && Object.keys(seg).length) {
             Object.assign(SEGRETARI, seg);
-            document.getElementById('segretariStatus').textContent = '\u2713 ' + Object.keys(seg).length + ' segretari da GitHub';
+            document.getElementById('segretariStatus').textContent = '\u2713 ' + Object.keys(seg).length + ' segretari caricati';
             document.getElementById('eliminaSegBtn').style.display = 'inline-block';
           }
         });
 
-        // Carica destinazioni da GitHub
-        githubLoad(GITHUB_FILE_DEST).then(function(dest) {
+        // Carica destinazioni da Firebase
+        fbGet(FB_PATH_DEST).then(function(dest) {
           if(dest && dest.length) {
             allAllievi = dest.map(function(a) {
               return Object.assign({}, a, { tel: contatti[a.cognome+'|'+a.nome] || contatti[a.cognome] || a.tel || '' });
@@ -1018,7 +936,7 @@ function fetchContattiConRetry(tentativo) {
             nascondiSpinner();
             document.getElementById('uploadBox').style.display = 'none';
             document.getElementById('toolbar').classList.add('visible');
-            document.getElementById('gasStatus').textContent = '\u2713 ' + nContatti + ' contatti \u2014 \u2713 ' + allAllievi.length + ' destinazioni da GitHub.';
+            document.getElementById('gasStatus').textContent = '\u2713 ' + nContatti + ' contatti \u2014 \u2713 ' + allAllievi.length + ' destinazioni caricate.';
             render();
           } else {
             mostraUpload();
