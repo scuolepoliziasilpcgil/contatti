@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Destinazioni 233 SILP CGIL rev.24</title>
+<title>Destinazioni 233 SILP CGIL rev.25</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
@@ -167,6 +167,8 @@ input[type=file] { display:none; }
 .seg-info { font-size:.73rem; color:#777; margin-top:.15rem; }
 .data-invio { font-size:.7rem; color:var(--verde); margin-top:.15rem; }
 .no-match { font-size:.73rem; color:#e67e22; margin-top:.15rem; }
+.dest.mancante-label { color:#e67e22; }
+.card.mancante { background:#fdfaf5; }
 .tel-input {
   border:1px solid #ccc;
   border-radius:8px;
@@ -311,7 +313,7 @@ input[type=file] { display:none; }
     </div>
   </div>
   <div class="header-right">
-    <span class="rev-tag">rev.24</span>
+    <span class="rev-tag">rev.25</span>
     <button class="icon-btn" id="settingsBtn" title="Modifica messaggio">&#9881;</button>
   </div>
 </header>
@@ -399,7 +401,9 @@ var GAS_URL = 'https://script.google.com/macros/s/AKfycbxsD7KImUy2Xa9egcfWmroGzo
 var KEY_INVIATI = 'destino233_inviati';
 var SEGRETARI = {};
 var allAllievi = [];
+var destinazioniRaw = [];
 var contatti = {};
+var contattiList = [];
 var KEY_MSG = 'destino233_msg';
 var contattiCaricati = 0;
 
@@ -625,11 +629,14 @@ function segna(chiave, btnEl, cardEl) {
 
 function aggiornaProgress() {
   var inv = getInviati();
-  var conTel = allAllievi.filter(function(a) { return a.tel; }).length;
-  var inviati = allAllievi.filter(function(a) { return inv[a.chiave]; }).length;
+  var conDest = allAllievi.filter(function(a) { return !a.mancante; });
+  var mancanti = allAllievi.length - conDest.length;
+  var conTel = conDest.filter(function(a) { return a.tel; }).length;
+  var inviati = conDest.filter(function(a) { return inv[a.chiave]; }).length;
   var el = document.getElementById('progress');
   el.style.display = 'block';
-  el.textContent = inviati + ' / ' + conTel + ' inviati  \u2022  ' + allAllievi.length + ' totali  \u2022  ' + (allAllievi.length - conTel) + ' senza numero';
+  el.textContent = inviati + ' / ' + conTel + ' inviati  \u2022  ' + conDest.length + ' con destinazione  \u2022  ' + (conDest.length - conTel) + ' senza numero'
+    + (mancanti ? '  \u2022  ' + mancanti + ' senza destinazione' : '');
 }
 
 // ── ABILITA PULSANTE CON NUMERO INSERITO ────────────────────
@@ -650,6 +657,64 @@ function abilitaBtn(chiave, val) {
 // ── WA SVG ───────────────────────────────────────────────────
 var WA_SVG = '<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>';
 
+// ── UNISCE L'ELENCO COMPLETO CONTATTI CON LE DESTINAZIONI CARICATE ──
+function mergeConDestinazioni(dest) {
+  var byChiave = {};
+  (dest || []).forEach(function(d) {
+    var chiave = d.chiave || ((normalizzaNome(d.cognome) + '_' + normalizzaNome(d.nome)).replace(/[^A-Z0-9_]/g,''));
+    byChiave[chiave] = d;
+  });
+
+  var risultato = [];
+  var visti = {};
+
+  contattiList.forEach(function(c) {
+    var cognome = normalizzaNome(c.cognome);
+    var nome = normalizzaNome(c.nome);
+    if(!cognome && !nome) return;
+    var chiave = (cognome + '_' + nome).replace(/[^A-Z0-9_]/g,'');
+    if(visti[chiave]) return;
+    visti[chiave] = true;
+    var d = byChiave[chiave];
+    var tel = contatti[cognome+'|'+nome] || contatti[cognome] || (d && d.tel) || c.tel || '';
+    if(d) {
+      risultato.push({
+        cognome: cognome, nome: nome,
+        scuola: d.scuola || c.scuola || 'SCUOLA NON INDICATA',
+        reparto: d.reparto || '',
+        provincia: d.provincia || estraiProvincia(d.reparto || ''),
+        chiave: chiave, tel: tel, mancante: false
+      });
+      delete byChiave[chiave];
+    } else {
+      risultato.push({
+        cognome: cognome, nome: nome,
+        scuola: c.scuola || 'SCUOLA NON INDICATA',
+        reparto: '', provincia: '',
+        chiave: chiave, tel: tel, mancante: true
+      });
+    }
+  });
+
+  // Destinazioni rimaste senza un contatto corrispondente (es. sheet non ancora aggiornato): le mostriamo comunque
+  Object.keys(byChiave).forEach(function(chiave) {
+    var d = byChiave[chiave];
+    var cognome = normalizzaNome(d.cognome);
+    var nome = normalizzaNome(d.nome);
+    risultato.push({
+      cognome: cognome, nome: nome,
+      scuola: d.scuola || 'SCUOLA NON INDICATA',
+      reparto: d.reparto || '',
+      provincia: d.provincia || estraiProvincia(d.reparto || ''),
+      chiave: chiave,
+      tel: contatti[cognome+'|'+nome] || contatti[cognome] || d.tel || '',
+      mancante: false
+    });
+  });
+
+  return risultato;
+}
+
 // ── RENDER ───────────────────────────────────────────────────
 function render() {
   var lista = document.getElementById('lista');
@@ -666,6 +731,7 @@ function render() {
     html += '<div class="scuola-label">' + scuola + '</div>';
     perScuola[scuola].forEach(function(a) {
       var isInviato = !!inv[a.chiave];
+      var mancante = !!a.mancante;
       var tel = a.tel;
       var provKey = (a.provincia || estraiProvincia(a.reparto)).toUpperCase();
       var seg = SEGRETARI[provKey] || SEGRETARI[PROVINCIA_REGIONE[provKey] || ''];
@@ -675,13 +741,17 @@ function render() {
       var waLink = tel ? ('https://wa.me/' + tel + '?text=' + buildMsg(a.nome, a.reparto, a.provincia)) : '';
       var safeChiave = a.chiave.replace(/'/g, "\\'");
 
-      html += '<div class="card' + (isInviato ? ' inviato' : '') + '" id="card_' + a.chiave + '">';
+      html += '<div class="card' + (isInviato ? ' inviato' : '') + (mancante ? ' mancante' : '') + '" id="card_' + a.chiave + '">';
       html += '<div class="info">';
       html += '<div class="nome">' + a.cognome + ' ' + a.nome + (tel ? ' <span style="font-weight:400;font-size:.78rem;color:#888;">+' + tel + '</span>' : '') + '</div>';
-      html += '<div class="dest">\uD83D\uDCCD ' + (a.reparto || '&mdash;') + '</div>';
-      html += '<div class="seg-info">\uD83E\uDD1D ' + segInfo + '</div>';
+      if(mancante) {
+        html += '<div class="dest mancante-label">\uD83D\uDCCD Destinazione non pervenuta</div>';
+      } else {
+        html += '<div class="dest">\uD83D\uDCCD ' + (a.reparto || '&mdash;') + '</div>';
+        html += '<div class="seg-info">\uD83E\uDD1D ' + segInfo + '</div>';
+      }
       if(isInviato) html += '<div class="data-invio">\u2713 Inviato il ' + inv[a.chiave] + '</div>';
-      if(!tel && !isInviato) {
+      if(!tel && !isInviato && !mancante) {
         html += '<div class="no-match">\u26A0\uFE0F Numero non trovato &mdash; inseriscilo qui sotto</div>';
         html += '<div style="display:flex;gap:.5rem;align-items:center;margin-top:.5rem;flex-wrap:wrap;">';
         html += '<input class="tel-input" type="tel" id="tel_' + a.chiave + '" placeholder="39XXXXXXXXXX" oninput="abilitaBtn(\'' + safeChiave + '\', this.value)">';
@@ -690,7 +760,9 @@ function render() {
         html += '</div>';
       }
       html += '</div>';
-      if(tel) {
+      if(mancante) {
+        html += '<a class="wa-btn" disabled>' + WA_SVG + ' In attesa</a>';
+      } else if(tel) {
         html += '<a class="wa-btn' + (isInviato ? ' inviato' : '') + '" id="btn_' + a.chiave + '"';
         html += ' href="' + waLink + '" target="_blank"';
         html += ' onclick="segna(\'' + safeChiave + '\', this, document.getElementById(\'card_' + a.chiave + '\'))">';
@@ -737,7 +809,7 @@ function processaFileDestinazioni(file) {
     var iScuola    = headers.findIndex(function(h) { return h.includes('SCUOLA'); });
     var iAssegnato = headers.findIndex(function(h) { return h.includes('ASSEGNATO'); });
 
-    allAllievi = [];
+    var lette = [];
     for(var j = headerRow + 1; j < rows.length; j++) {
       var row = rows[j];
       var cognome = normalizzaNome(row[iCognome]);
@@ -748,18 +820,20 @@ function processaFileDestinazioni(file) {
       var provincia = estraiProvincia(reparto);
       var chiave  = (cognome + '_' + nome).replace(/[^A-Z0-9_]/g,'');
       var tel     = contatti[cognome + '|' + nome] || contatti[cognome] || '';
-      allAllievi.push({ cognome:cognome, nome:nome, scuola:scuola, reparto:reparto, provincia:provincia, chiave:chiave, tel:tel });
+      lette.push({ cognome:cognome, nome:nome, scuola:scuola, reparto:reparto, provincia:provincia, chiave:chiave, tel:tel });
     }
+    destinazioniRaw = lette;
+    allAllievi = mergeConDestinazioni(destinazioniRaw);
 
     document.getElementById('uploadBox').style.display = 'none';
     document.getElementById('toolbar').classList.add('visible');
     render();
 
-    // Salva su Firebase
+    // Salva su Firebase (solo i dati letti dal file, non i "mancanti" calcolati)
     document.getElementById('gasStatus').textContent = 'Salvataggio in corso\u2026';
-    salvaDestinazioniSuFirebase(allAllievi).then(function(res) {
+    salvaDestinazioniSuFirebase(destinazioniRaw).then(function(res) {
       document.getElementById('gasStatus').textContent = res.ok
-        ? '\u2713 File destinazioni salvato. Gli altri possono aggiornare la pagina.'
+        ? '\u2713 File destinazioni salvato (' + lette.length + ' righe). Gli altri possono aggiornare la pagina.'
         : '\u26A0\uFE0F Salvataggio fallito: ' + res.detail;
     });
     } catch(err) {
@@ -776,6 +850,7 @@ document.getElementById('fileInput').addEventListener('change', function(e) {
 async function eliminaFile() {
   if(!confirm('Elimini il file destinazioni? La lista verr\u00e0 svuotata.')) return;
   allAllievi = [];
+  destinazioniRaw = [];
   localStorage.removeItem(KEY_INVIATI);
   document.getElementById('lista').innerHTML = '';
   document.getElementById('progress').style.display = 'none';
@@ -907,12 +982,20 @@ function fetchContattiConRetry(tentativo) {
       }
       if(data.contatti) {
         var visti = {};
+        var vistiNomi = {};
+        contattiList = [];
         data.contatti.forEach(function(c) {
           var tel = normalizzaTel(c.tel);
-          if(!tel || visti[tel]) return;
-          visti[tel] = true;
-          contatti[normalizzaNome(c.cognome) + '|' + normalizzaNome(c.nome)] = tel;
-          contatti[normalizzaNome(c.cognome)] = tel;
+          if(tel && !visti[tel]) {
+            visti[tel] = true;
+            contatti[normalizzaNome(c.cognome) + '|' + normalizzaNome(c.nome)] = tel;
+            contatti[normalizzaNome(c.cognome)] = tel;
+          }
+          var chiaveNome = normalizzaNome(c.cognome) + '|' + normalizzaNome(c.nome);
+          if(!vistiNomi[chiaveNome] && (c.cognome || c.nome)) {
+            vistiNomi[chiaveNome] = true;
+            contattiList.push({ cognome: c.cognome, nome: c.nome, scuola: c.scuola || '', tel: tel });
+          }
         });
         var nContatti = Object.keys(visti).length;
         contattiCaricati = nContatti;
@@ -930,13 +1013,12 @@ function fetchContattiConRetry(tentativo) {
         // Carica destinazioni da Firebase
         fbGet(FB_PATH_DEST).then(function(dest) {
           if(dest && dest.length) {
-            allAllievi = dest.map(function(a) {
-              return Object.assign({}, a, { tel: contatti[a.cognome+'|'+a.nome] || contatti[a.cognome] || a.tel || '' });
-            });
+            destinazioniRaw = dest;
+            allAllievi = mergeConDestinazioni(destinazioniRaw);
             nascondiSpinner();
             document.getElementById('uploadBox').style.display = 'none';
             document.getElementById('toolbar').classList.add('visible');
-            document.getElementById('gasStatus').textContent = '\u2713 ' + nContatti + ' contatti \u2014 \u2713 ' + allAllievi.length + ' destinazioni caricate.';
+            document.getElementById('gasStatus').textContent = '\u2713 ' + nContatti + ' contatti \u2014 \u2713 ' + destinazioniRaw.length + ' destinazioni caricate.';
             render();
           } else {
             mostraUpload();
