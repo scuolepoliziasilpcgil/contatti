@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SILP CGIL · Lascia i tuoi contatti — rev.5</title>
+<title>SILP CGIL · Lascia i tuoi contatti — rev.6</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
 <style>
@@ -124,43 +124,18 @@
   }
   #archivioStatus{ font-size:.78rem; color:var(--blu-deep); margin-top:.8rem; line-height:1.5; }
 
-  /* PANNELLO CONFIGURAZIONE */
-  .config-bar{
+  /* CORSO (testo semplice) */
+  .corso-bar{
     width:100%;
     max-width:520px;
     margin:1.2rem auto 0;
     padding:0 1.2rem;
-  }
-  .config-inner{
-    background:rgba(255,255,255,.07);
-    border:1px solid rgba(247,243,232,.15);
-    border-radius:10px;
-    padding:.7rem 1rem;
-    display:flex;
-    align-items:center;
-    gap:.8rem;
-  }
-  .config-label{
-    font-family:'IBM Plex Mono',monospace;
-    font-size:.72rem;
-    letter-spacing:.1em;
-    text-transform:uppercase;
-    opacity:.7;
-    flex:0 0 auto;
-  }
-  .config-input{
-    width:5rem;
-    background:rgba(255,255,255,.1);
-    border:1px solid rgba(247,243,232,.25);
-    border-radius:6px;
-    color:var(--crema);
-    font-family:'IBM Plex Mono',monospace;
-    font-size:.9rem;
-    font-weight:500;
     text-align:center;
-    padding:.3rem .4rem;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:.85rem;
+    letter-spacing:.06em;
+    opacity:.85;
   }
-  .config-input:focus{outline:2px solid var(--giallo); outline-offset:1px;}
 
   /* CARD FORM */
   .card{
@@ -317,7 +292,7 @@
 <header>
   <img src="logo.jpg" alt="SILP CGIL">
   SILP CGIL · Coordinamento Scuole di Polizia
-  <span class="rev-tag">rev.5</span>
+  <span class="rev-tag">rev.6</span>
   <button class="icon-btn" id="adminBtn" title="Amministrazione" onclick="apriAdminPanel()">&#9881;</button>
 </header>
 
@@ -335,11 +310,9 @@
   </div>
 </div>
 
-<div class="config-bar">
-  <div class="config-inner">
-    <span class="config-label">Numero corso</span>
-    <input class="config-input" id="corsoInput" type="number" min="1" placeholder="233">
-  </div>
+<div class="corso-bar">
+  <span class="corso-label">233&deg;</span> Corso Allievi Agenti
+  <input type="hidden" id="corsoInput">
 </div>
 
 <div class="card">
