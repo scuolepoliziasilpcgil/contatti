@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Destinazioni 233 SILP CGIL rev.8</title>
+<title>Destinazioni 233 SILP CGIL rev.10</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
@@ -307,7 +307,7 @@ input[type=file] { display:none; }
     </div>
   </div>
   <div class="header-right">
-    <span class="rev-tag">rev.8</span>
+    <span class="rev-tag">rev.10</span>
     <button class="icon-btn" id="settingsBtn" title="Modifica messaggio">&#9881;</button>
   </div>
 </header>
@@ -350,6 +350,7 @@ input[type=file] { display:none; }
 <div class="upload-box" id="uploadBox">
   <h2>Carica il file Excel con le destinazioni</h2>
   <p>Il file deve avere le colonne: COGNOME, NOME, SCUOLA, ASSEGNATO C/O</p>
+  <p id="gasStatus" style="font-size:.78rem; color:#005CA9; margin-bottom:.5rem;"></p>
   <label class="upload-btn" for="fileInput">&#128194; Scegli file Excel</label>
   <input type="file" id="fileInput" accept=".xlsx,.xls">
 </div>
@@ -798,7 +799,7 @@ function eliminaSegretari() {
 }
 
 // ── CARICA CONTATTI DAL GAS ──────────────────────────────────
-document.getElementById('segretariStatus').textContent = 'Caricamento contatti in corso\u2026';
+document.getElementById('segretariStatus').textContent = 'Nessun file caricato \u2014 verr\u00e0 usata la frase generica';
 fetch(GAS_URL + '?action=getContatti')
   .then(function(r) { return r.json(); })
   .then(function(data) {
@@ -811,14 +812,14 @@ fetch(GAS_URL + '?action=getContatti')
         contatti[chiave] = tel;
         contatti[soloCognome] = tel;
       });
-      document.getElementById('segretariStatus').textContent =
-        Object.keys(contatti).length / 2 + ' contatti caricati dal backend \u2014 carica il file segretari provinciali';
+      var nContatti = data.contatti.filter(function(c){ return normalizzaTel(c.tel); }).length;
+      document.getElementById('gasStatus').textContent = '\u2713 ' + nContatti + ' contatti caricati. Ora carica il file destinazioni.';
     } else {
-      document.getElementById('segretariStatus').textContent = '\u26A0\uFE0F Errore caricamento contatti: ' + JSON.stringify(data);
+      document.getElementById('gasStatus').textContent = '\u26A0\uFE0F Errore caricamento contatti: ' + JSON.stringify(data);
     }
   })
   .catch(function(err) {
-    document.getElementById('segretariStatus').textContent = '\u26A0\uFE0F Connessione al backend fallita: ' + err.message;
+    document.getElementById('gasStatus').textContent = '\u26A0\uFE0F Connessione al backend fallita: ' + err.message;
   });
 </script>
 </body>
