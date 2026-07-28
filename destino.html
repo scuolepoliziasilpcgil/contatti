@@ -724,25 +724,33 @@ document.getElementById('fileSegretari').addEventListener('change', function(e) 
   reader.onload = function(ev) {
     var wb = XLSX.read(ev.target.result, { type:'binary' });
     var ws = wb.Sheets[wb.SheetNames[0]];
-    
+
     Object.keys(SEGRETARI).forEach(function(k) { delete SEGRETARI[k]; });
     var trovati = 0;
 
-    // Prima prova con header automatico (prima riga come chiavi)
     var jsonRows = XLSX.utils.sheet_to_json(ws, { defval:'' });
     if(jsonRows.length > 0) {
-      var keys = Object.keys(jsonRows[0]).map(function(k){ return k.toUpperCase(); });
-      var kProv = Object.keys(jsonRows[0])[keys.findIndex(function(k){ return k.includes('PROV'); })];
-      var kNome = Object.keys(jsonRows[0])[keys.findIndex(function(k){ return k.includes('SEGRETARIO') || k === 'NOME'; })];
-      var kCog  = Object.keys(jsonRows[0])[keys.findIndex(function(k){ return k === 'COGNOME'; })];
-      var kTel  = Object.keys(jsonRows[0])[keys.findIndex(function(k){ return k.includes('TEL') || k.includes('CEL') || k.includes('NUMERO'); })];
+      // Trova le chiavi giuste indipendentemente dal case
+      var firstRow = jsonRows[0];
+      var allKeys = Object.keys(firstRow);
+
+      var kProv = allKeys.find(function(k){ return k.toUpperCase().includes('PROV'); }) || allKeys[0];
+      var kCog  = allKeys.find(function(k){ return k.toUpperCase() === 'COGNOME'; });
+      var kNome = allKeys.find(function(k){
+        var u = k.toUpperCase();
+        return u === 'NOME' || u.includes('SEGRETARIO');
+      }) || allKeys[1];
+      var kTel  = allKeys.find(function(k){
+        var u = k.toUpperCase();
+        return u.includes('TEL') || u.includes('CEL') || u.includes('NUMERO');
+      }) || allKeys[2];
 
       jsonRows.forEach(function(row) {
         var prov = String(row[kProv] || '').trim().toUpperCase();
         var nomeCompleto = '';
-        if(kCog && kNome) {
+        if(kCog) {
           nomeCompleto = (String(row[kCog]||'').trim() + ' ' + String(row[kNome]||'').trim()).trim();
-        } else if(kNome) {
+        } else {
           nomeCompleto = String(row[kNome]||'').trim();
         }
         var tel = normalizzaTel(String(row[kTel] || '').trim());
@@ -755,7 +763,7 @@ document.getElementById('fileSegretari').addEventListener('change', function(e) 
 
     document.getElementById('segretariStatus').textContent = trovati > 0
       ? '\u2713 ' + trovati + ' segretari caricati'
-      : '\u26A0\uFE0F File caricato ma nessun segretario trovato. Controlla le colonne (PROVINCIA, SEGRETARIO/NOME, CELLULARE)';
+      : '\u26A0\uFE0F Nessun segretario trovato. Controlla le colonne: PROVINCIA, SEGRETARIO, CELLULARE';
     document.getElementById('eliminaSegBtn').style.display = 'inline-block';
     if(allAllievi.length) render();
   };
