@@ -327,7 +327,7 @@ header {
     </div>
   </div>
   <div class="header-right">
-    <span class="rev-tag">rev.7</span>
+    <span class="rev-tag">rev.8</span>
     <button class="icon-btn" id="settingsBtn" title="Scrivi la comunicazione" style="display:none;">&#9881;</button>
   </div>
 </header>
@@ -797,58 +797,62 @@ async function renderRegistro() {
   contenitore.innerHTML = '<div class="spinner-label">Caricamento registro\u2026</div>';
   document.getElementById('progress').style.display = 'none';
 
-  var perAllievo = await caricaRegistro();
-  registroCorrente = perAllievo;
+  try {
+    var perAllievo = await caricaRegistro();
+    registroCorrente = perAllievo;
 
-  var roster;
-  if(corsoSelezionato === 'attivo') {
-    roster = contattiList;
-  } else {
-    var nomeFoglio = 'Contatti_archivio_' + corsoSelezionato;
-    var res = await fetch(GAS_URL + '?action=getContattiArchivio&foglio=' + encodeURIComponent(nomeFoglio))
-      .then(function(r) { return r.json(); }).catch(function() { return { contatti: [] }; });
-    roster = (res.contatti || []).map(function(c) { return { cognome: c.cognome, nome: c.nome, scuola: c.scuola || 'SCUOLA NON INDICATA' }; });
-  }
+    var roster;
+    if(corsoSelezionato === 'attivo') {
+      roster = contattiList;
+    } else {
+      var nomeFoglio = 'Contatti_archivio_' + corsoSelezionato;
+      var res = await fetch(GAS_URL + '?action=getContattiArchivio&foglio=' + encodeURIComponent(nomeFoglio))
+        .then(function(r) { return r.json(); }).catch(function() { return { contatti: [] }; });
+      roster = (res.contatti || []).map(function(c) { return { cognome: c.cognome, nome: c.nome, scuola: c.scuola || 'SCUOLA NON INDICATA' }; });
+    }
 
-  var perScuola = {};
-  var vistiRoster = {};
-  roster.forEach(function(c) {
-    var cognome = normalizzaNome(c.cognome), nome = normalizzaNome(c.nome);
-    if(!cognome && !nome) return;
-    var chiave = (cognome + '_' + nome).replace(/[^A-Z0-9_]/g,'');
-    if(vistiRoster[chiave]) return;
-    vistiRoster[chiave] = true;
-    var k = c.scuola || 'SCUOLA NON INDICATA';
-    if(!perScuola[k]) perScuola[k] = [];
-    perScuola[k].push({ chiave: chiave, cognome: cognome, nome: nome, count: (perAllievo[chiave] ? perAllievo[chiave].invii.length : 0) });
-  });
-  Object.keys(perAllievo).forEach(function(chiave) {
-    if(vistiRoster[chiave]) return;
-    var a = perAllievo[chiave];
-    var k = a.scuola || 'SCUOLA NON INDICATA';
-    if(!perScuola[k]) perScuola[k] = [];
-    perScuola[k].push({ chiave: chiave, cognome: a.cognome, nome: a.nome, count: a.invii.length });
-  });
-  Object.keys(perScuola).forEach(function(sc) {
-    perScuola[sc].sort(function(a, b) { return (a.cognome + a.nome).localeCompare(b.cognome + b.nome); });
-  });
-
-  var html = '';
-  var scuoleOrdinate = Object.keys(perScuola).sort();
-  if(!scuoleOrdinate.length) {
-    contenitore.innerHTML = '<div class="errore">Nessun dato disponibile per questo corso.</div>';
-    return;
-  }
-  scuoleOrdinate.forEach(function(scuola) {
-    html += '<div class="scuola-label-row"><span class="scuola-label">' + scuola + '</span></div>';
-    perScuola[scuola].forEach(function(a) {
-      html += '<div class="card" style="cursor:pointer;" onclick="apriStoricoAllievo(\'' + a.chiave + '\')">';
-      html += '<div class="info"><div class="nome">' + a.cognome + ' ' + a.nome + '</div></div>';
-      html += '<div style="font-weight:700; color:' + (a.count ? 'var(--verde)' : '#999') + ';">' + a.count + ' messagg' + (a.count === 1 ? 'io' : 'i') + '</div>';
-      html += '</div>';
+    var perScuola = {};
+    var vistiRoster = {};
+    roster.forEach(function(c) {
+      var cognome = normalizzaNome(c.cognome), nome = normalizzaNome(c.nome);
+      if(!cognome && !nome) return;
+      var chiave = (cognome + '_' + nome).replace(/[^A-Z0-9_]/g,'');
+      if(vistiRoster[chiave]) return;
+      vistiRoster[chiave] = true;
+      var k = c.scuola || 'SCUOLA NON INDICATA';
+      if(!perScuola[k]) perScuola[k] = [];
+      perScuola[k].push({ chiave: chiave, cognome: cognome, nome: nome, count: (perAllievo[chiave] ? perAllievo[chiave].invii.length : 0) });
     });
-  });
-  contenitore.innerHTML = html;
+    Object.keys(perAllievo).forEach(function(chiave) {
+      if(vistiRoster[chiave]) return;
+      var a = perAllievo[chiave];
+      var k = a.scuola || 'SCUOLA NON INDICATA';
+      if(!perScuola[k]) perScuola[k] = [];
+      perScuola[k].push({ chiave: chiave, cognome: a.cognome, nome: a.nome, count: a.invii.length });
+    });
+    Object.keys(perScuola).forEach(function(sc) {
+      perScuola[sc].sort(function(a, b) { return (a.cognome + a.nome).localeCompare(b.cognome + b.nome); });
+    });
+
+    var html = '';
+    var scuoleOrdinate = Object.keys(perScuola).sort();
+    if(!scuoleOrdinate.length) {
+      contenitore.innerHTML = '<div class="errore">Nessun dato disponibile per questo corso.</div>';
+      return;
+    }
+    scuoleOrdinate.forEach(function(scuola) {
+      html += '<div class="scuola-label-row"><span class="scuola-label">' + scuola + '</span></div>';
+      perScuola[scuola].forEach(function(a) {
+        html += '<div class="card" style="cursor:pointer;" onclick="apriStoricoAllievo(\'' + a.chiave + '\')">';
+        html += '<div class="info"><div class="nome">' + a.cognome + ' ' + a.nome + '</div></div>';
+        html += '<div style="font-weight:700; color:' + (a.count ? 'var(--verde)' : '#999') + ';">' + a.count + ' messagg' + (a.count === 1 ? 'io' : 'i') + '</div>';
+        html += '</div>';
+      });
+    });
+    contenitore.innerHTML = html;
+  } catch(err) {
+    contenitore.innerHTML = '<div class="errore">\u26A0\uFE0F Errore nel caricamento del registro: ' + err.message + '</div>';
+  }
 }
 
 function apriStoricoAllievo(chiave) {
