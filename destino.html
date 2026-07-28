@@ -691,42 +691,38 @@ document.getElementById('fileSegretari').addEventListener('change', function(e) 
   reader.onload = function(ev) {
     var wb = XLSX.read(ev.target.result, { type:'binary' });
     var ws = wb.Sheets[wb.SheetNames[0]];
-    var rows = XLSX.utils.sheet_to_json(ws, { header:1, defval:'' });
-
+    
     Object.keys(SEGRETARI).forEach(function(k) { delete SEGRETARI[k]; });
-
-    var headerRow = -1, iProv = -1, iCognome = -1, iNome = -1, iTel = -1;
-    for(var i = 0; i < Math.min(rows.length, 5); i++) {
-      var r = rows[i].map(function(c) { return String(c).toUpperCase(); });
-      if(r.some(function(c) { return c.includes('PROV'); })) {
-        headerRow = i;
-        iProv    = r.findIndex(function(c) { return c.includes('PROV'); });
-        iCognome = r.findIndex(function(c) { return c === 'COGNOME'; });
-        iNome    = r.findIndex(function(c) { return c === 'NOME' || c.includes('SEGRETARIO'); });
-        iTel     = r.findIndex(function(c) { return c.includes('TEL') || c.includes('CEL') || c.includes('NUMERO'); });
-        break;
-      }
-    }
-
-    var startRow = headerRow >= 0 ? headerRow + 1 : 0;
     var trovati = 0;
-    for(var j = startRow; j < rows.length; j++) {
-      var row = rows[j];
-      var prov = String(row[iProv >= 0 ? iProv : 0] || '').trim().toUpperCase();
-      var nomeCompleto;
-      if(iCognome >= 0 && iNome >= 0) {
-        nomeCompleto = (String(row[iCognome]||'').trim() + ' ' + String(row[iNome]||'').trim()).trim();
-      } else {
-        nomeCompleto = String(row[iNome >= 0 ? iNome : 1] || '').trim();
-      }
-      var tel = normalizzaTel(String(row[iTel >= 0 ? iTel : 2] || '').trim());
-      if(prov && nomeCompleto) {
-        SEGRETARI[prov] = { nome:nomeCompleto, tel:tel };
-        trovati++;
-      }
+
+    // Prima prova con header automatico (prima riga come chiavi)
+    var jsonRows = XLSX.utils.sheet_to_json(ws, { defval:'' });
+    if(jsonRows.length > 0) {
+      var keys = Object.keys(jsonRows[0]).map(function(k){ return k.toUpperCase(); });
+      var kProv = Object.keys(jsonRows[0])[keys.findIndex(function(k){ return k.includes('PROV'); })];
+      var kNome = Object.keys(jsonRows[0])[keys.findIndex(function(k){ return k.includes('SEGRETARIO') || k === 'NOME'; })];
+      var kCog  = Object.keys(jsonRows[0])[keys.findIndex(function(k){ return k === 'COGNOME'; })];
+      var kTel  = Object.keys(jsonRows[0])[keys.findIndex(function(k){ return k.includes('TEL') || k.includes('CEL') || k.includes('NUMERO'); })];
+
+      jsonRows.forEach(function(row) {
+        var prov = String(row[kProv] || '').trim().toUpperCase();
+        var nomeCompleto = '';
+        if(kCog && kNome) {
+          nomeCompleto = (String(row[kCog]||'').trim() + ' ' + String(row[kNome]||'').trim()).trim();
+        } else if(kNome) {
+          nomeCompleto = String(row[kNome]||'').trim();
+        }
+        var tel = normalizzaTel(String(row[kTel] || '').trim());
+        if(prov && nomeCompleto) {
+          SEGRETARI[prov] = { nome:nomeCompleto, tel:tel };
+          trovati++;
+        }
+      });
     }
 
-    document.getElementById('segretariStatus').textContent = '\u2713 ' + trovati + ' segretari caricati';
+    document.getElementById('segretariStatus').textContent = trovati > 0
+      ? '\u2713 ' + trovati + ' segretari caricati'
+      : '\u26A0\uFE0F File caricato ma nessun segretario trovato. Controlla le colonne (PROVINCIA, SEGRETARIO/NOME, CELLULARE)';
     document.getElementById('eliminaSegBtn').style.display = 'inline-block';
     if(allAllievi.length) render();
   };
