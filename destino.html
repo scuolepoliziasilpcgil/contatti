@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Destinazioni 233 SILP CGIL rev.5</title>
+<title>Destinazioni 233 SILP CGIL rev.6</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
@@ -307,7 +307,7 @@ input[type=file] { display:none; }
     </div>
   </div>
   <div class="header-right">
-    <span class="rev-tag">rev.5</span>
+    <span class="rev-tag">rev.6</span>
     <button class="icon-btn" id="settingsBtn" title="Modifica messaggio">&#9881;</button>
   </div>
 </header>
@@ -656,11 +656,17 @@ function render() {
 // ── CARICA FILE DESTINAZIONI ─────────────────────────────────
 function processaFileDestinazioni(file) {
   if(!file) return;
+  if(typeof XLSX === 'undefined') {
+    document.getElementById('lista').innerHTML = '<div class="errore">Libreria non caricata, ricarica la pagina.</div>';
+    return;
+  }
   var reader = new FileReader();
   reader.onload = function(ev) {
-    var wb = XLSX.read(ev.target.result, { type:'binary' });
-    var ws = wb.Sheets[wb.SheetNames[0]];
-    var rows = XLSX.utils.sheet_to_json(ws, { header:1, defval:'' });
+    try {
+      var data = new Uint8Array(ev.target.result);
+      var wb = XLSX.read(data, { type:'array' });
+      var ws = wb.Sheets[wb.SheetNames[0]];
+      var rows = XLSX.utils.sheet_to_json(ws, { header:1, defval:'' });
 
     var headerRow = -1;
     for(var i = 0; i < Math.min(rows.length, 10); i++) {
@@ -697,8 +703,11 @@ function processaFileDestinazioni(file) {
     document.getElementById('uploadBox').style.display = 'none';
     document.getElementById('toolbar').classList.add('visible');
     render();
+    } catch(err) {
+      document.getElementById('lista').innerHTML = '<div class="errore">Errore lettura file: ' + err.message + '</div>';
+    }
   };
-  reader.readAsBinaryString(file);
+  reader.readAsArrayBuffer(file);
 }
 
 document.getElementById('fileInput').addEventListener('change', function(e) {
@@ -720,54 +729,62 @@ function eliminaFile() {
 document.getElementById('fileSegretari').addEventListener('change', function(e) {
   var file = e.target.files[0];
   if(!file) return;
+
+  if(typeof XLSX === 'undefined') {
+    document.getElementById('segretariStatus').textContent = '\u26A0\uFE0F Libreria non caricata, ricarica la pagina e riprova.';
+    return;
+  }
+
+  document.getElementById('segretariStatus').textContent = 'Caricamento in corso\u2026';
   var reader = new FileReader();
   reader.onload = function(ev) {
-    var wb = XLSX.read(ev.target.result, { type:'binary' });
-    var ws = wb.Sheets[wb.SheetNames[0]];
+    try {
+      var data = new Uint8Array(ev.target.result);
+      var wb = XLSX.read(data, { type:'array' });
+      var ws = wb.Sheets[wb.SheetNames[0]];
 
-    Object.keys(SEGRETARI).forEach(function(k) { delete SEGRETARI[k]; });
-    var trovati = 0;
+      Object.keys(SEGRETARI).forEach(function(k) { delete SEGRETARI[k]; });
+      var trovati = 0;
 
-    var jsonRows = XLSX.utils.sheet_to_json(ws, { defval:'' });
-    if(jsonRows.length > 0) {
-      // Trova le chiavi giuste indipendentemente dal case
-      var firstRow = jsonRows[0];
-      var allKeys = Object.keys(firstRow);
+      var jsonRows = XLSX.utils.sheet_to_json(ws, { defval:'' });
+      if(jsonRows.length > 0) {
+        var firstRow = jsonRows[0];
+        var allKeys = Object.keys(firstRow);
 
-      var kProv = allKeys.find(function(k){ return k.toUpperCase().includes('PROV'); }) || allKeys[0];
-      var kCog  = allKeys.find(function(k){ return k.toUpperCase() === 'COGNOME'; });
-      var kNome = allKeys.find(function(k){
-        var u = k.toUpperCase();
-        return u === 'NOME' || u.includes('SEGRETARIO');
-      }) || allKeys[1];
-      var kTel  = allKeys.find(function(k){
-        var u = k.toUpperCase();
-        return u.includes('TEL') || u.includes('CEL') || u.includes('NUMERO');
-      }) || allKeys[2];
+        var kProv = allKeys.find(function(k){ return k.toUpperCase().includes('PROV'); }) || allKeys[0];
+        var kCog  = allKeys.find(function(k){ return k.toUpperCase() === 'COGNOME'; });
+        var kNome = allKeys.find(function(k){
+          var u = k.toUpperCase();
+          return u === 'NOME' || u.includes('SEGRETARIO');
+        }) || allKeys[1];
+        var kTel  = allKeys.find(function(k){
+          var u = k.toUpperCase();
+          return u.includes('TEL') || u.includes('CEL') || u.includes('NUMERO');
+        }) || allKeys[2];
 
-      jsonRows.forEach(function(row) {
-        var prov = String(row[kProv] || '').trim().toUpperCase();
-        var nomeCompleto = '';
-        if(kCog) {
-          nomeCompleto = (String(row[kCog]||'').trim() + ' ' + String(row[kNome]||'').trim()).trim();
-        } else {
-          nomeCompleto = String(row[kNome]||'').trim();
-        }
-        var tel = normalizzaTel(String(row[kTel] || '').trim());
-        if(prov && nomeCompleto) {
-          SEGRETARI[prov] = { nome:nomeCompleto, tel:tel };
-          trovati++;
-        }
-      });
+        jsonRows.forEach(function(row) {
+          var prov = String(row[kProv] || '').trim().toUpperCase();
+          var nomeCompleto = kCog
+            ? (String(row[kCog]||'').trim() + ' ' + String(row[kNome]||'').trim()).trim()
+            : String(row[kNome]||'').trim();
+          var tel = normalizzaTel(String(row[kTel] || '').trim());
+          if(prov && nomeCompleto) {
+            SEGRETARI[prov] = { nome:nomeCompleto, tel:tel };
+            trovati++;
+          }
+        });
+      }
+
+      document.getElementById('segretariStatus').textContent = trovati > 0
+        ? '\u2713 ' + trovati + ' segretari caricati'
+        : '\u26A0\uFE0F Nessun segretario trovato. Chiavi: ' + (jsonRows.length > 0 ? Object.keys(jsonRows[0]).join(', ') : 'file vuoto');
+      document.getElementById('eliminaSegBtn').style.display = 'inline-block';
+      if(allAllievi.length) render();
+    } catch(err) {
+      document.getElementById('segretariStatus').textContent = '\u26A0\uFE0F Errore: ' + err.message;
     }
-
-    document.getElementById('segretariStatus').textContent = trovati > 0
-      ? '\u2713 ' + trovati + ' segretari caricati'
-      : '\u26A0\uFE0F Nessun segretario trovato. Chiavi trovate: ' + (jsonRows.length > 0 ? Object.keys(jsonRows[0]).join(', ') : 'file vuoto');
-    document.getElementById('eliminaSegBtn').style.display = 'inline-block';
-    if(allAllievi.length) render();
   };
-  reader.readAsBinaryString(file);
+  reader.readAsArrayBuffer(file);
 });
 
 function eliminaSegretari() {
