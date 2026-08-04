@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Destinazioni 233 SILP CGIL rev.27</title>
+<title>Destinazioni 233 SILP CGIL rev.29</title>
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="icon" type="image/x-icon" href="favicon.ico">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -316,7 +316,7 @@ input[type=file] { display:none; }
     </div>
   </div>
   <div class="header-right">
-    <span class="rev-tag">rev.27</span>
+    <span class="rev-tag">rev.29</span>
     <button class="icon-btn" id="settingsBtn" title="Modifica messaggio">&#9881;</button>
   </div>
 </header>
@@ -326,7 +326,7 @@ input[type=file] { display:none; }
   <div class="panel">
     <h2>&#9999;&#65039; Impostazioni</h2>
 
-    <p style="font-size:.73rem; color:#888; margin-bottom:.5rem;">I dati destinazioni e segretari sono salvati su Firebase (database condiviso), visibili subito a tutti senza bisogno di token o PIN.</p>
+    <p style="font-size:.73rem; color:#888; margin-bottom:.5rem;">I dati destinazioni, segretari e gli invii gi&agrave; effettuati sono salvati su Firebase (database condiviso), visibili subito a tutti senza bisogno di token o PIN.</p>
 
     <hr style="border:none; border-top:1px solid #eee; margin:1rem 0;">
 
@@ -376,6 +376,7 @@ input[type=file] { display:none; }
 
 <!-- TOOLBAR (visibile dopo caricamento) -->
 <div class="toolbar" id="toolbar">
+  <button class="danger-btn" onclick="resetTuttiInviati()">&#128260; Reset tutti gli invii</button>
   <button class="danger-btn" onclick="eliminaFile()">&#128465; Elimina file destinazioni</button>
 </div>
 
@@ -399,12 +400,13 @@ input[type=file] { display:none; }
 <div id="lista"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script>var TITLE_TEMPLATE = 'Destinazioni {CORSO} SILP CGIL rev.27';</script>
+<script>var TITLE_TEMPLATE = 'Destinazioni {CORSO} SILP CGIL rev.29';</script>
 <script src="corso-config.js"></script>
 <script>
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbxsD7KImUy2Xa9egcfWmroGzoO1DEaHZwLt4Khocc4DOtAfGmSpPRrYUWufknSeV5fgoQ/exec';
-var KEY_INVIATI = 'destino233_inviati';
 var SEGRETARI = {};
+var INVIATI = {};
+var pollingInviatiTimer = null;
 var allAllievi = [];
 var destinazioniRaw = [];
 var contatti = {};
@@ -537,6 +539,7 @@ function apriPannello() {
 var FIREBASE_DB = 'https://quizassegnazioni-default-rtdb.europe-west1.firebasedatabase.app';
 var FB_PATH_DEST = 'qiv2/destino233/destinazioni';
 var FB_PATH_SEG  = 'qiv2/destino233/segretari';
+var FB_PATH_INVIATI = 'qiv2/destino233/inviati';
 
 async function fbSet(path, data) {
   try {
@@ -609,27 +612,69 @@ function buildMsg(nome, reparto, provincia) {
   return encodeURIComponent(testo);
 }
 
-// ── ANTI-DOPPIO INVIO ────────────────────────────────────────
+// ── ANTI-DOPPIO INVIO (condiviso su Firebase, non pi\u00f9 solo locale) ──
+// Cos\u00ec se tu e un collega inviate dallo stesso elenco da dispositivi diversi,
+// appena uno segna un invio l'altro lo vede (al massimo dopo il polling periodico)
+// ed evitate di scrivere due volte allo stesso allievo.
 function getInviati() {
-  try { return JSON.parse(localStorage.getItem(KEY_INVIATI) || '{}'); } catch(e) { return {}; }
-}
-
-function saveInviato(chiave) {
-  var inv = getInviati();
-  inv[chiave] = new Date().toLocaleString('it-IT');
-  localStorage.setItem(KEY_INVIATI, JSON.stringify(inv));
+  return INVIATI;
 }
 
 function segna(chiave, btnEl, cardEl) {
-  setTimeout(function() {
-    saveInviato(chiave);
-    btnEl.classList.add('inviato');
-    btnEl.innerHTML = '\u2713 Inviato';
-    cardEl.classList.add('inviato');
-    var dataEl = cardEl.querySelector('.data-invio');
-    if(dataEl) dataEl.textContent = 'Inviato il ' + getInviati()[chiave];
-    aggiornaProgress();
-  }, 700);
+  var now = new Date().toLocaleString('it-IT');
+  // Aggiorna subito l'interfaccia di chi ha cliccato, senza aspettare la risposta del server
+  INVIATI[chiave] = now;
+  btnEl.classList.add('inviato');
+  btnEl.innerHTML = '\u2713 Inviato';
+  cardEl.classList.add('inviato');
+  var dataEl = cardEl.querySelector('.data-invio');
+  if(dataEl) dataEl.textContent = 'Inviato il ' + now;
+  aggiornaProgress();
+  // Scrive solo questa chiave su Firebase, senza toccare gli invii altrui
+  fbSet(FB_PATH_INVIATI + '/' + chiave, now).then(function(res) {
+    if(!res.ok && dataEl) {
+      dataEl.textContent = 'Inviato (salvataggio condiviso non riuscito, resta solo su questo dispositivo per ora)';
+    }
+  });
+}
+
+// Controlla periodicamente se altri hanno segnato nuovi invii, cos\u00ec la
+// lista resta aggiornata anche se pi\u00f9 persone inviano nello stesso momento.
+function avviaPollingInviati() {
+  if(pollingInviatiTimer) return;
+  pollingInviatiTimer = setInterval(function() {
+    fbGet(FB_PATH_INVIATI).then(function(inv) {
+      if(!inv) return;
+      var cambiato = false;
+      Object.keys(inv).forEach(function(k) {
+        if(INVIATI[k] !== inv[k]) { INVIATI[k] = inv[k]; cambiato = true; }
+      });
+      if(cambiato) render();
+    });
+  }, 15000);
+}
+
+// Annulla un singolo invio segnato per errore (es. doppio invio, destinatario sbagliato).
+// Il pulsante "Invia WA" torna disponibile per quell'allievo su tutti i dispositivi.
+function annullaInvio(chiave) {
+  if(!confirm('Annulli l\'invio segnato per questo allievo? Il pulsante "Invia WA" torner\u00e0 disponibile per tutti.')) return;
+  delete INVIATI[chiave];
+  fbDelete(FB_PATH_INVIATI + '/' + chiave);
+  render();
+}
+
+// Azzera TUTTI gli invii segnati, per tutti gli allievi e su tutti i dispositivi.
+// Da usare solo in caso di problemi seri (es. caricato il file sbagliato, test da ripulire).
+async function resetTuttiInviati() {
+  if(!confirm('Sei sicuro di voler azzerare TUTTI gli invii segnati finora? Questa azione \u00e8 irreversibile e vale per tutti i dispositivi collegati.')) return;
+  var res = await fbDelete(FB_PATH_INVIATI);
+  if(res.ok) {
+    INVIATI = {};
+    render();
+    alert('Invii azzerati per tutti.');
+  } else {
+    alert('Errore durante l\'azzeramento: ' + res.detail);
+  }
 }
 
 function aggiornaProgress() {
@@ -755,7 +800,7 @@ function render() {
         html += '<div class="dest">\uD83D\uDCCD ' + (a.reparto || '&mdash;') + '</div>';
         html += '<div class="seg-info">\uD83E\uDD1D ' + segInfo + '</div>';
       }
-      if(isInviato) html += '<div class="data-invio">\u2713 Inviato il ' + inv[a.chiave] + '</div>';
+      if(isInviato) html += '<div class="data-invio">\u2713 Inviato il ' + inv[a.chiave] + ' &middot; <a href="#" onclick="annullaInvio(\'' + safeChiave + '\'); return false;" style="color:#c0392b;text-decoration:underline;">annulla</a></div>';
       if(!tel && !isInviato && !mancante) {
         html += '<div class="no-match">\u26A0\uFE0F Numero non trovato &mdash; inseriscilo qui sotto</div>';
         html += '<div style="display:flex;gap:.5rem;align-items:center;margin-top:.5rem;flex-wrap:wrap;">';
@@ -833,6 +878,7 @@ function processaFileDestinazioni(file) {
     document.getElementById('uploadBox').style.display = 'none';
     document.getElementById('toolbar').classList.add('visible');
     render();
+    avviaPollingInviati();
 
     // Salva su Firebase (solo i dati letti dal file, non i "mancanti" calcolati)
     document.getElementById('gasStatus').textContent = 'Salvataggio in corso\u2026';
@@ -856,7 +902,6 @@ async function eliminaFile() {
   if(!confirm('Elimini il file destinazioni? La lista verr\u00e0 svuotata.')) return;
   allAllievi = [];
   destinazioniRaw = [];
-  localStorage.removeItem(KEY_INVIATI);
   document.getElementById('lista').innerHTML = '';
   document.getElementById('progress').style.display = 'none';
   document.getElementById('toolbar').classList.remove('visible');
@@ -956,7 +1001,7 @@ async function eliminaSegretari() {
     : 'Nessun file caricato \u2014 verr\u00e0 usata la frase generica (cancellazione sul server non riuscita: ' + res.detail + ')';
 }
 
-// ── AVVIO: carica contatti GAS e dati destinazioni/segretari ─
+// ── AVVIO: carica contatti GAS e dati destinazioni/segretari/inviati ─
 document.getElementById('segretariStatus').textContent = 'Nessun file caricato \u2014 verr\u00e0 usata la frase generica';
 
 function nascondiSpinner() {
@@ -1006,17 +1051,18 @@ function fetchContattiConRetry(tentativo) {
         contattiCaricati = nContatti;
         document.getElementById('gasStatus').textContent = '\u2713 ' + nContatti + ' contatti caricati.';
 
-        // Carica segretari da Firebase
-        fbGet(FB_PATH_SEG).then(function(seg) {
+        // Carica segretari, destinazioni e invii gi\u00e0 effettuati da Firebase in parallelo
+        Promise.all([fbGet(FB_PATH_SEG), fbGet(FB_PATH_DEST), fbGet(FB_PATH_INVIATI)]).then(function(results) {
+          var seg = results[0], dest = results[1], inv = results[2];
+
           if(seg && Object.keys(seg).length) {
             Object.assign(SEGRETARI, seg);
             document.getElementById('segretariStatus').textContent = '\u2713 ' + Object.keys(seg).length + ' segretari caricati';
             document.getElementById('eliminaSegBtn').style.display = 'inline-block';
           }
-        });
 
-        // Carica destinazioni da Firebase
-        fbGet(FB_PATH_DEST).then(function(dest) {
+          if(inv) Object.assign(INVIATI, inv);
+
           if(dest && dest.length) {
             destinazioniRaw = dest;
             allAllievi = mergeConDestinazioni(destinazioniRaw);
@@ -1025,6 +1071,7 @@ function fetchContattiConRetry(tentativo) {
             document.getElementById('toolbar').classList.add('visible');
             document.getElementById('gasStatus').textContent = '\u2713 ' + nContatti + ' contatti \u2014 \u2713 ' + destinazioniRaw.length + ' destinazioni caricate.';
             render();
+            avviaPollingInviati();
           } else {
             mostraUpload();
             document.getElementById('gasStatus').textContent = '\u2713 ' + nContatti + ' contatti caricati. Ora carica il file destinazioni.';
