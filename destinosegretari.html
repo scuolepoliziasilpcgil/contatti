@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Destinazioni Segretari 233 SILP CGIL rev.4</title>
+<title>Destinazioni Segretari 233 SILP CGIL rev.5</title>
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="icon" type="image/x-icon" href="favicon.ico">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -305,7 +305,7 @@ input[type=file] { display:none; }
     </div>
   </div>
   <div class="header-right">
-    <span class="rev-tag">rev.4</span>
+    <span class="rev-tag">rev.5</span>
     <button class="icon-btn" id="settingsBtn" title="Modifica messaggio">&#9881;</button>
   </div>
 </header>
@@ -383,7 +383,7 @@ input[type=file] { display:none; }
 <div id="lista"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script>var TITLE_TEMPLATE = 'Destinazioni Segretari {CORSO} SILP CGIL rev.4';</script>
+<script>var TITLE_TEMPLATE = 'Destinazioni Segretari {CORSO} SILP CGIL rev.5';</script>
 <script src="corso-config.js"></script>
 <script>
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbxsD7KImUy2Xa9egcfWmroGzoO1DEaHZwLt4Khocc4DOtAfGmSpPRrYUWufknSeV5fgoQ/exec';
@@ -427,6 +427,13 @@ var PROVINCIA_REGIONE = {
   'BELLUNO':'VENETO','PADOVA':'VENETO','ROVIGO':'VENETO','TREVISO':'VENETO',
   'VENEZIA':'VENETO','VERONA':'VENETO','VICENZA':'VENETO'
 };
+// Rende le chiavi coerenti con normProv (niente trattini), cosi' "Monza-Brianza"
+// e varianti simili funzionano anche nel fallback regionale.
+(function() {
+  var norm = {};
+  Object.keys(PROVINCIA_REGIONE).forEach(function(k) { norm[normProv(k)] = PROVINCIA_REGIONE[k]; });
+  PROVINCIA_REGIONE = norm;
+})();
 
 // ── PROVINCE, riconoscimento verificato su tutte le 342 voci dell'elenco nazionale 233° ──
 // Tre livelli: nomi di comuni/localita' specifici, poi nomi di provincia generici,
@@ -743,6 +750,13 @@ function estraiProvincia(reparto) {
 
 
 
+// Normalizza il nome di una provincia per usarlo come chiave, cosi' "Monza-Brianza"
+// e "Monza Brianza" si incontrano sempre, indipendentemente da come e' scritta
+// nel file segretari o calcolata dall'estrazione automatica.
+function normProv(s) {
+  return String(s || '').toUpperCase().replace(/-/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
 function normalizzaTel(tel) {
   var t = String(tel || '').replace(/\s+/g,'').replace(/^\+/,'');
   if(t.startsWith('39') && t.length > 11) return t;
@@ -898,7 +912,7 @@ function raggruppaPerProvincia() {
   var gruppi = {};
   allAllievi.forEach(function(a) {
     if(!a.reparto || a.mancante) return;
-    var prov = (a.provincia || '').toUpperCase().trim();
+    var prov = normProv(a.provincia);
     if(!prov) return;
     if(!gruppi[prov]) gruppi[prov] = [];
     gruppi[prov].push(a);
@@ -1173,7 +1187,7 @@ document.getElementById('fileSegretari').addEventListener('change', function(e) 
         }) || allKeys[2];
 
         jsonRows.forEach(function(row) {
-          var prov = String(row[kProv] || '').trim().toUpperCase();
+          var prov = normProv(row[kProv]);
           var nomeCompleto = kCog
             ? (String(row[kCog]||'').trim() + ' ' + String(row[kNome]||'').trim()).trim()
             : String(row[kNome]||'').trim();
