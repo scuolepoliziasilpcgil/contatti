@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Destinazioni Segretari 233 SILP CGIL rev.5</title>
+<title>Destinazioni Segretari 233 SILP CGIL rev.6</title>
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="icon" type="image/x-icon" href="favicon.ico">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -305,7 +305,7 @@ input[type=file] { display:none; }
     </div>
   </div>
   <div class="header-right">
-    <span class="rev-tag">rev.5</span>
+    <span class="rev-tag">rev.6</span>
     <button class="icon-btn" id="settingsBtn" title="Modifica messaggio">&#9881;</button>
   </div>
 </header>
@@ -383,7 +383,7 @@ input[type=file] { display:none; }
 <div id="lista"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script>var TITLE_TEMPLATE = 'Destinazioni Segretari {CORSO} SILP CGIL rev.5';</script>
+<script>var TITLE_TEMPLATE = 'Destinazioni Segretari {CORSO} SILP CGIL rev.6';</script>
 <script src="corso-config.js"></script>
 <script>
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbxsD7KImUy2Xa9egcfWmroGzoO1DEaHZwLt4Khocc4DOtAfGmSpPRrYUWufknSeV5fgoQ/exec';
@@ -899,7 +899,10 @@ function avviaPolling() {
 function aggiornaProgress() {
   var inv = getInviati();
   var gruppi = raggruppaPerProvincia();
-  var conSeg = Object.keys(gruppi).filter(function(p) { return SEGRETARI[p] && SEGRETARI[p].tel; }).length;
+  var conSeg = Object.keys(gruppi).filter(function(p) {
+    var s = SEGRETARI[p] || SEGRETARI[PROVINCIA_REGIONE[p] || ''];
+    return s && s.tel;
+  }).length;
   var inviati = Object.keys(gruppi).filter(function(p) { return inv[p]; }).length;
   var el = document.getElementById('progress');
   el.style.display = 'block';
@@ -1010,7 +1013,10 @@ function render() {
   var html = '';
   province.forEach(function(prov) {
     var elenco = gruppi[prov];
-    var seg = SEGRETARI[prov];
+    var segProv = SEGRETARI[prov];
+    var segReg = SEGRETARI[PROVINCIA_REGIONE[prov] || ''];
+    var seg = segProv || segReg;
+    var isRegionale = !segProv && !!segReg;
     var isInviato = !!inv[prov];
     var safeProv = prov.replace(/'/g, "\\'");
     var tel = seg && seg.tel ? seg.tel : '';
@@ -1021,9 +1027,10 @@ function render() {
     html += '<div>';
     html += '<div class="provincia">' + prov + '</div>';
     if(seg && seg.nome) {
-      html += '<div class="seg-nome">Segretario: <b>' + seg.nome + '</b>' + (tel ? ' &#8226; +' + tel : '') + '</div>';
+      html += '<div class="seg-nome">Segretario' + (isRegionale ? ' regionale' : '') + ': <b>' + seg.nome + '</b>' + (tel ? ' &#8226; +' + tel : '') + '</div>';
+      if(isRegionale) html += '<div class="no-seg" style="color:#888;">Segretario provinciale non ancora inserito, uso quello regionale</div>';
     } else {
-      html += '<div class="no-seg">&#9888;&#65039; Segretario provinciale non ancora inserito</div>';
+      html += '<div class="no-seg">&#9888;&#65039; Nessun segretario, provinciale o regionale, ancora inserito</div>';
     }
     html += '<div class="num-allievi">' + elenco.length + ' allievo/i in arrivo</div>';
     if(isInviato) {
