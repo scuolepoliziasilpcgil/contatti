@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Invio Segretari 233 SILP CGIL rev.1</title>
+<title>Destino Segretari 233 SILP CGIL rev.2</title>
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="icon" type="image/x-icon" href="favicon.ico">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -68,15 +68,63 @@ header {
   display:none;
 }
 
+.upload-box {
+  background:#fff;
+  border-radius:10px;
+  padding:1.4rem;
+  margin-bottom:1rem;
+  border:2px dashed #cce0f5;
+  text-align:center;
+}
+.upload-box h2 { font-size:.95rem; color:var(--blu); margin-bottom:.5rem; }
+.upload-box p { font-size:.8rem; color:#888; margin-bottom:1rem; }
+.upload-btn {
+  display:inline-block;
+  background:var(--blu);
+  color:#fff;
+  padding:.6rem 1.4rem;
+  border-radius:8px;
+  cursor:pointer;
+  font-size:.9rem;
+  font-weight:700;
+}
+input[type=file] { display:none; }
+
 .toolbar {
   display:none;
   justify-content:flex-end;
   gap:.5rem;
   margin-bottom:.5rem;
+  flex-wrap:wrap;
 }
 .toolbar.visible { display:flex; }
 .danger-btn {
   background:var(--rosso);
+  color:#fff;
+  border:none;
+  border-radius:8px;
+  padding:.4rem .9rem;
+  font-size:.8rem;
+  font-weight:700;
+  cursor:pointer;
+}
+
+.segretari-box {
+  background:#fff;
+  border-radius:10px;
+  padding:.85rem 1.2rem;
+  margin-bottom:.8rem;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:1rem;
+  flex-wrap:wrap;
+}
+.segretari-label { font-weight:700; font-size:.88rem; color:var(--blu); }
+.segretari-status { font-size:.75rem; color:#888; margin-top:.2rem; }
+.segretari-actions { display:flex; gap:.5rem; align-items:center; }
+.small-btn {
+  background:var(--blu);
   color:#fff;
   border:none;
   border-radius:8px;
@@ -244,15 +292,6 @@ header {
   margin:.5rem 0;
   font-size:.88rem;
 }
-.info-box {
-  background:#fff;
-  border-radius:10px;
-  padding:1.2rem 1.4rem;
-  margin-bottom:1rem;
-  font-size:.85rem;
-  color:#555;
-  line-height:1.6;
-}
 </style>
 </head>
 <body>
@@ -266,7 +305,7 @@ header {
     </div>
   </div>
   <div class="header-right">
-    <span class="rev-tag">rev.1</span>
+    <span class="rev-tag">rev.2</span>
     <button class="icon-btn" id="settingsBtn" title="Modifica messaggio">&#9881;</button>
   </div>
 </header>
@@ -275,6 +314,10 @@ header {
 <div class="overlay" id="msgOverlay">
   <div class="panel">
     <h2>&#9999;&#65039; Impostazioni messaggio</h2>
+
+    <p style="font-size:.73rem; color:#888; margin-bottom:.5rem;">Destinazioni, segretari e gli invii gi&agrave; effettuati sono condivisi su Firebase con la pagina destino.html: qualunque cosa carichi qui la vede anche chi usa l'altra pagina, e viceversa.</p>
+
+    <hr style="border:none; border-top:1px solid #eee; margin:1rem 0;">
 
     <span class="field-label">Testo del messaggio per il segretario</span>
     <textarea id="msgPrincipale" rows="9"></textarea>
@@ -305,12 +348,32 @@ header {
   <div class="spinner-label">Caricamento dati in corso&hellip;</div>
 </div>
 
-<!-- MESSAGGIO SE NON CI SONO ANCORA DATI -->
-<div class="info-box" id="infoBox" style="display:none;"></div>
+<!-- UPLOAD FILE DESTINAZIONI -->
+<div class="upload-box" id="uploadBox" style="display:none;">
+  <h2>Carica il file Excel con le destinazioni</h2>
+  <p>Il file deve avere le colonne: COGNOME, NOME, SCUOLA, ASSEGNATO C/O</p>
+  <p id="gasStatus" style="font-size:.78rem; color:#005CA9; margin-bottom:.5rem;"></p>
+  <label class="upload-btn" for="fileInput">&#128194; Scegli file Excel</label>
+  <input type="file" id="fileInput" accept=".xlsx,.xls">
+</div>
 
 <!-- TOOLBAR -->
 <div class="toolbar" id="toolbar">
   <button class="danger-btn" onclick="resetTuttiInviati()">&#128260; Reset tutti gli invii</button>
+  <button class="danger-btn" onclick="eliminaFile()">&#128465; Elimina file destinazioni</button>
+</div>
+
+<!-- BOX SEGRETARI -->
+<div class="segretari-box">
+  <div>
+    <div class="segretari-label">&#128203; Segretari provinciali</div>
+    <div class="segretari-status" id="segretariStatus">Nessun file caricato</div>
+  </div>
+  <div class="segretari-actions">
+    <label class="small-btn" for="fileSegretari">&#128194; Carica</label>
+    <input type="file" id="fileSegretari" accept=".xlsx,.xls">
+    <button class="danger-btn" id="eliminaSegBtn" onclick="eliminaSegretari()" style="display:none;">&#128465; Elimina</button>
+  </div>
 </div>
 
 <!-- PROGRESS -->
@@ -320,47 +383,101 @@ header {
 <div id="lista"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script>var TITLE_TEMPLATE = 'Invio Segretari {CORSO} SILP CGIL rev.1';</script>
+<script>var TITLE_TEMPLATE = 'Destino Segretari {CORSO} SILP CGIL rev.2';</script>
 <script src="corso-config.js"></script>
 <script>
+var GAS_URL = 'https://script.google.com/macros/s/AKfycbxsD7KImUy2Xa9egcfWmroGzoO1DEaHZwLt4Khocc4DOtAfGmSpPRrYUWufknSeV5fgoQ/exec';
 var SEGRETARI = {};
 var INVIATI = {};
 var allAllievi = [];
+var destinazioniRaw = [];
+var contatti = {};
+var contattiList = [];
+var contattiCaricati = 0;
 var pollingTimer = null;
-var KEY_MSG = 'inviosegretari233_msg';
+var KEY_MSG = 'destinosegretari233_msg';
 
-// ── FIREBASE (stesso database e stesso corso di destino.html) ───
-var FIREBASE_DB = 'https://quizassegnazioni-default-rtdb.europe-west1.firebasedatabase.app';
-var FB_PATH_DEST = 'qiv2/destino233/destinazioni';
-var FB_PATH_SEG  = 'qiv2/destino233/segretari';
-var FB_PATH_INVIATI_SEG = 'qiv2/destino233/inviatiSegretari';
+// ── MAPPA PROVINCIA -> REGIONE (usata solo se in futuro serve un fallback) ──
+var PROVINCIA_REGIONE = {
+  'CHIETI':'ABRUZZO',"L'AQUILA":'ABRUZZO','PESCARA':'ABRUZZO','TERAMO':'ABRUZZO',
+  'MATERA':'BASILICATA','POTENZA':'BASILICATA',
+  'CATANZARO':'CALABRIA','COSENZA':'CALABRIA','CROTONE':'CALABRIA','REGGIO CALABRIA':'CALABRIA','VIBO VALENTIA':'CALABRIA',
+  'AVELLINO':'CAMPANIA','BENEVENTO':'CAMPANIA','CASERTA':'CAMPANIA','NAPOLI':'CAMPANIA','SALERNO':'CAMPANIA',
+  'BOLOGNA':'EMILIA ROMAGNA','FERRARA':'EMILIA ROMAGNA',"FORLI' - CESENA":'EMILIA ROMAGNA','MODENA':'EMILIA ROMAGNA',
+  'PARMA':'EMILIA ROMAGNA','PIACENZA':'EMILIA ROMAGNA','RAVENNA':'EMILIA ROMAGNA','REGGIO EMILIA':'EMILIA ROMAGNA','RIMINI':'EMILIA ROMAGNA',
+  'GORIZIA':'FRIULI VENEZIA GIULIA','PORDENONE':'FRIULI VENEZIA GIULIA','TRIESTE':'FRIULI VENEZIA GIULIA','UDINE':'FRIULI VENEZIA GIULIA',
+  'FROSINONE':'LAZIO','LATINA':'LAZIO','RIETI':'LAZIO','ROMA':'LAZIO','VITERBO':'LAZIO',
+  'GENOVA':'LIGURIA','IMPERIA':'LIGURIA','LA SPEZIA':'LIGURIA','SAVONA':'LIGURIA',
+  'BERGAMO':'LOMBARDIA','BRESCIA':'LOMBARDIA','COMO':'LOMBARDIA','CREMONA':'LOMBARDIA',
+  'LECCO':'LOMBARDIA','LODI':'LOMBARDIA','MANTOVA':'LOMBARDIA','MILANO':'LOMBARDIA',
+  'MONZA-BRIANZA':'LOMBARDIA','PAVIA':'LOMBARDIA','SONDRIO':'LOMBARDIA','VARESE':'LOMBARDIA',
+  'ANCONA':'MARCHE','ASCOLI PICENO':'MARCHE','FERMO':'MARCHE','MACERATA':'MARCHE','PESARO - URBINO':'MARCHE',
+  'CAMPOBASSO':'MOLISE','ISERNIA':'MOLISE',
+  'ALESSANDRIA':'PIEMONTE','ASTI':'PIEMONTE','BIELLA':'PIEMONTE','CUNEO':'PIEMONTE',
+  'NOVARA':'PIEMONTE','TORINO':'PIEMONTE','VERBANIA':'PIEMONTE','VERCELLI':'PIEMONTE',
+  'BARI':'PUGLIA','BRINDISI':'PUGLIA','FOGGIA':'PUGLIA','LECCE':'PUGLIA','TARANTO':'PUGLIA','BAT':'PUGLIA',
+  'CAGLIARI':'SARDEGNA','NUORO':'SARDEGNA','ORISTANO':'SARDEGNA','SASSARI':'SARDEGNA',
+  'AGRIGENTO':'SICILIA','CALTANISSETTA':'SICILIA','CATANIA':'SICILIA','ENNA':'SICILIA',
+  'MESSINA':'SICILIA','PALERMO':'SICILIA','RAGUSA':'SICILIA','SIRACUSA':'SICILIA','TRAPANI':'SICILIA',
+  'AREZZO':'TOSCANA','FIRENZE':'TOSCANA','GROSSETO':'TOSCANA','LIVORNO':'TOSCANA',
+  'LUCCA':'TOSCANA','MASSA CARRARA':'TOSCANA','PISA':'TOSCANA','PISTOIA':'TOSCANA','PRATO':'TOSCANA','SIENA':'TOSCANA',
+  'BOLZANO':'TRENTINO ALTO ADIGE','TRENTO':'TRENTINO ALTO ADIGE',
+  'PERUGIA':'UMBRIA','TERNI':'UMBRIA',
+  'AOSTA':"VALLE D'AOSTA",
+  'BELLUNO':'VENETO','PADOVA':'VENETO','ROVIGO':'VENETO','TREVISO':'VENETO',
+  'VENEZIA':'VENETO','VERONA':'VENETO','VICENZA':'VENETO'
+};
 
-async function fbSet(path, data) {
-  try {
-    var r = await fetch(FIREBASE_DB + '/' + path + '.json', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
-    });
-    if(r.ok) return { ok:true };
-    var errBody = '';
-    try { var j = await r.json(); errBody = j.error || ''; } catch(e2) {}
-    return { ok:false, detail:'HTTP ' + r.status + (errBody ? ' \u2014 ' + errBody : '') };
-  } catch(e) { return { ok:false, detail:'errore di rete: ' + e.message }; }
-}
-async function fbDelete(path) {
-  try {
-    var r = await fetch(FIREBASE_DB + '/' + path + '.json', { method: 'DELETE' });
-    if(r.ok) return { ok:true };
-    return { ok:false, detail:'HTTP ' + r.status };
-  } catch(e) { return { ok:false, detail:'errore di rete: ' + e.message }; }
-}
-async function fbGet(path) {
-  try {
-    var r = await fetch(FIREBASE_DB + '/' + path + '.json?t=' + Date.now());
-    if(!r.ok) return null;
-    return await r.json();
-  } catch(e) { return null; }
+// ── PROVINCE NOTE DAL FILE POSTI 233° (stessa mappa di destino.html) ──
+var PROVINCE_MAP = {
+  'ALESSANDRIA':'ALESSANDRIA','ANCONA':'ANCONA','AOSTA':'AOSTA',
+  'AREZZO':'AREZZO','ASTI':'ASTI','AVELLINO':'AVELLINO','BARI':'BARI',
+  'BELLUNO':'BELLUNO','BENEVENTO':'BENEVENTO','BERGAMO':'BERGAMO',
+  'BIELLA':'BIELLA','BOLOGNA':'BOLOGNA','BOLZANO':'BOLZANO',
+  'BRESCIA':'BRESCIA','CAGLIARI':'CAGLIARI','COMO':'COMO',
+  'COSENZA':'COSENZA','CREMONA':'CREMONA','CROTONE':'CROTONE',
+  'CUNEO':'CUNEO','FERMO':'FERMO','FERRARA':'FERRARA',
+  'FIRENZE':'FIRENZE','FOGGIA':'FOGGIA','FROSINONE':'FROSINONE',
+  'GENOVA':'GENOVA','GORIZIA':'GORIZIA','GROSSETO':'GROSSETO',
+  'IMPERIA':'IMPERIA','AQUILA':"L'AQUILA",'SPEZIA':'LA SPEZIA',
+  'LATINA':'LATINA','LECCE':'LECCE','LECCO':'LECCO',
+  'LIVORNO':'LIVORNO','LODI':'LODI','LUCCA':'LUCCA',
+  'MACERATA':'MACERATA','MANTOVA':'MANTOVA','MASSA':'MASSA CARRARA',
+  'MESSINA':'MESSINA','MILANO':'MILANO','MODENA':'MODENA',
+  'MONZA':'MONZA-BRIANZA','BRIANZA':'MONZA-BRIANZA',
+  'NAPOLI':'NAPOLI','NOVARA':'NOVARA','NUORO':'NUORO',
+  'PADOVA':'PADOVA','PALERMO':'PALERMO','PARMA':'PARMA',
+  'PAVIA':'PAVIA','PERUGIA':'PERUGIA','PESARO':'PESARO - URBINO',
+  'PIACENZA':'PIACENZA','PISA':'PISA','PISTOIA':'PISTOIA',
+  'PORDENONE':'PORDENONE','POTENZA':'POTENZA','PRATO':'PRATO',
+  'RAVENNA':'RAVENNA','REGGIO':'REGGIO CALABRIA',
+  'RIETI':'RIETI','RIMINI':'RIMINI','ROMA':'ROMA',
+  'ROVIGO':'ROVIGO','SALERNO':'SALERNO','SASSARI':'SASSARI',
+  'SAVONA':'SAVONA','SIENA':'SIENA','SIRACUSA':'SIRACUSA',
+  'SONDRIO':'SONDRIO','TARANTO':'TARANTO','TERAMO':'TERAMO',
+  'TERNI':'TERNI','TORINO':'TORINO','TRAPANI':'TRAPANI',
+  'TRENTO':'TRENTO','TREVISO':'TREVISO','TRIESTE':'TRIESTE',
+  'UDINE':'UDINE','VARESE':'VARESE','VENEZIA':'VENEZIA',
+  'VERBANIA':'VERBANIA','VERCELLI':'VERCELLI','VERONA':'VERONA',
+  'VIBO':'VIBO VALENTIA','VICENZA':'VICENZA','VITERBO':'VITERBO',
+  'EMILIA':'REGGIO EMILIA','CALABRIA':'REGGIO CALABRIA',
+  'FORL':'FORLI\' - CESENA',
+};
+
+function estraiProvincia(reparto) {
+  var r = reparto.toUpperCase();
+  var chiavi = Object.keys(PROVINCE_MAP).sort(function(a,b){ return b.length - a.length; });
+  for(var i = 0; i < chiavi.length; i++) {
+    if(r.indexOf(chiavi[i]) >= 0) return PROVINCE_MAP[chiavi[i]];
+  }
+  var parole = r.split(/[\s,\.]+/).filter(function(p){
+    return p.length > 2 && ['QUESTURA','DI','COMMISSARIATO','POLIZIA','STRADALE',
+      'FERROVIARIA','POSTALE','SCIENTIFICA','MOBILE','REPARTO','UFFICIO',
+      'SQUADRA','CENTRO','SUD','NORD','EST','OVEST','P','S','PS',
+      'COMPARTIMENTO','COMP','SEZIONE','SEZIONI','OPERATIVE','INTERNE',
+      'SOTTOSEZIONE','AUTOSTRADALE','DISTACCAMENTO','ZONA','FRONTIERA'].indexOf(p) < 0;
+  });
+  return parole.length ? parole[0] : '';
 }
 
 function normalizzaTel(tel) {
@@ -368,6 +485,9 @@ function normalizzaTel(tel) {
   if(t.startsWith('39') && t.length > 11) return t;
   if(t.startsWith('3')) return '39' + t;
   return t;
+}
+function normalizzaNome(s) {
+  return String(s || '').trim().toUpperCase().replace(/\s+/g,' ');
 }
 
 // ── MESSAGGIO DEFAULT ─────────────────────────────────────────
@@ -379,7 +499,6 @@ function getMsg() {
 }
 function getMsgPrincipale() { return getMsg().principale || DEFAULT_PRINCIPALE; }
 function getMsgFirma() { return getMsg().firma || DEFAULT_FIRMA; }
-
 function salvaMsg() {
   var m = {
     principale: document.getElementById('msgPrincipale').value.trim() || DEFAULT_PRINCIPALE,
@@ -413,7 +532,47 @@ function buildMsg(segNome, provincia, elenco) {
   return encodeURIComponent(testo);
 }
 
-// ── ANTI-DOPPIO INVIO (condiviso su Firebase, per provincia) ────
+// ── FIREBASE (stesso database e stesso corso di destino.html) ───
+var FIREBASE_DB = 'https://quizassegnazioni-default-rtdb.europe-west1.firebasedatabase.app';
+var FB_PATH_DEST = 'qiv2/destino233/destinazioni';
+var FB_PATH_SEG  = 'qiv2/destino233/segretari';
+var FB_PATH_INVIATI_SEG = 'qiv2/destino233/inviatiSegretari';
+
+async function fbSet(path, data) {
+  try {
+    var r = await fetch(FIREBASE_DB + '/' + path + '.json', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    if(r.ok) return { ok:true };
+    var errBody = '';
+    try { var j = await r.json(); errBody = j.error || ''; } catch(e2) {}
+    return { ok:false, detail:'HTTP ' + r.status + (errBody ? ' \u2014 ' + errBody : '') };
+  } catch(e) { return { ok:false, detail:'errore di rete: ' + e.message }; }
+}
+async function fbDelete(path) {
+  try {
+    var r = await fetch(FIREBASE_DB + '/' + path + '.json', { method: 'DELETE' });
+    if(r.ok) return { ok:true };
+    var errBody = '';
+    try { var j = await r.json(); errBody = j.error || ''; } catch(e2) {}
+    return { ok:false, detail:'HTTP ' + r.status + (errBody ? ' \u2014 ' + errBody : '') };
+  } catch(e) { return { ok:false, detail:'errore di rete: ' + e.message }; }
+}
+async function fbGet(path) {
+  try {
+    var r = await fetch(FIREBASE_DB + '/' + path + '.json?t=' + Date.now());
+    if(!r.ok) return null;
+    return await r.json();
+  } catch(e) { return null; }
+}
+async function salvaDestinazioniSuFirebase(allievi) { return fbSet(FB_PATH_DEST, allievi); }
+async function eliminaDestinazioniSuFirebase() { return fbDelete(FB_PATH_DEST); }
+async function salvaSegretariSuFirebase(segretari) { return fbSet(FB_PATH_SEG, segretari); }
+async function eliminaSegretariSuFirebase() { return fbDelete(FB_PATH_SEG); }
+
+// ── ANTI-DOPPIO INVIO (condiviso su Firebase, per provincia, indipendente da destino.html) ──
 function getInviati() { return INVIATI; }
 
 function segna(provKey, btnEl, cardEl) {
@@ -429,14 +588,12 @@ function segna(provKey, btnEl, cardEl) {
     if(!res.ok && dataEl) dataEl.textContent = 'Inviato (salvataggio condiviso non riuscito, resta solo su questo dispositivo per ora)';
   });
 }
-
 function annullaInvio(provKey) {
   if(!confirm('Annulli l\'invio segnato per questa provincia? Il pulsante "Invia WA" torner\u00e0 disponibile per tutti.')) return;
   delete INVIATI[provKey];
   fbDelete(FB_PATH_INVIATI_SEG + '/' + provKey);
   render();
 }
-
 async function resetTuttiInviati() {
   if(!confirm('Sei sicuro di voler azzerare TUTTI gli invii ai segretari segnati finora? Questa azione \u00e8 irreversibile e vale per tutti i dispositivi collegati.')) return;
   var res = await fbDelete(FB_PATH_INVIATI_SEG);
@@ -450,12 +607,11 @@ function avviaPolling() {
     Promise.all([fbGet(FB_PATH_INVIATI_SEG), fbGet(FB_PATH_DEST), fbGet(FB_PATH_SEG)]).then(function(r) {
       var inv = r[0], dest = r[1], seg = r[2];
       var cambiato = false;
-      if(inv) {
-        Object.keys(inv).forEach(function(k) { if(INVIATI[k] !== inv[k]) { INVIATI[k] = inv[k]; cambiato = true; } });
-      }
-      if(seg) { SEGRETARI = seg; cambiato = true; }
-      if(dest && dest.length !== allAllievi.length) {
-        allAllievi = dest;
+      if(inv) { Object.keys(inv).forEach(function(k) { if(INVIATI[k] !== inv[k]) { INVIATI[k] = inv[k]; cambiato = true; } }); }
+      if(seg && JSON.stringify(seg) !== JSON.stringify(SEGRETARI)) { SEGRETARI = seg; cambiato = true; }
+      if(dest && dest.length !== destinazioniRaw.length) {
+        destinazioniRaw = dest;
+        allAllievi = mergeConDestinazioni(destinazioniRaw);
         cambiato = true;
       }
       if(cambiato) render();
@@ -478,7 +634,7 @@ var WA_SVG = '<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor
 function raggruppaPerProvincia() {
   var gruppi = {};
   allAllievi.forEach(function(a) {
-    if(!a.reparto) return; // salta chi non ha ancora destinazione
+    if(!a.reparto || a.mancante) return;
     var prov = (a.provincia || '').toUpperCase().trim();
     if(!prov) return;
     if(!gruppi[prov]) gruppi[prov] = [];
@@ -498,11 +654,70 @@ function abilitaBtn(provKey, val) {
     var gruppi = raggruppaPerProvincia();
     var nomeSeg = SEGRETARI[provKey].nome || 'collega';
     btn.href = 'https://wa.me/' + tel + '?text=' + buildMsg(nomeSeg, provKey, gruppi[provKey]);
+    salvaSegretariSuFirebase(SEGRETARI);
   } else {
     btn.setAttribute('disabled', '');
   }
 }
 
+// ── UNISCE L'ELENCO CONTATTI CON LE DESTINAZIONI (stessa logica di destino.html) ──
+function mergeConDestinazioni(dest) {
+  var byChiave = {};
+  (dest || []).forEach(function(d) {
+    var chiave = d.chiave || ((normalizzaNome(d.cognome) + '_' + normalizzaNome(d.nome)).replace(/[^A-Z0-9_]/g,''));
+    byChiave[chiave] = d;
+  });
+
+  var risultato = [];
+  var visti = {};
+
+  contattiList.forEach(function(c) {
+    var cognome = normalizzaNome(c.cognome);
+    var nome = normalizzaNome(c.nome);
+    if(!cognome && !nome) return;
+    var chiave = (cognome + '_' + nome).replace(/[^A-Z0-9_]/g,'');
+    if(visti[chiave]) return;
+    visti[chiave] = true;
+    var d = byChiave[chiave];
+    var tel = contatti[cognome+'|'+nome] || contatti[cognome] || (d && d.tel) || c.tel || '';
+    if(d) {
+      risultato.push({
+        cognome: cognome, nome: nome,
+        scuola: d.scuola || c.scuola || 'SCUOLA NON INDICATA',
+        reparto: d.reparto || '',
+        provincia: d.provincia || estraiProvincia(d.reparto || ''),
+        chiave: chiave, tel: tel, mancante: false
+      });
+      delete byChiave[chiave];
+    } else {
+      risultato.push({
+        cognome: cognome, nome: nome,
+        scuola: c.scuola || 'SCUOLA NON INDICATA',
+        reparto: '', provincia: '',
+        chiave: chiave, tel: tel, mancante: true
+      });
+    }
+  });
+
+  Object.keys(byChiave).forEach(function(chiave) {
+    var d = byChiave[chiave];
+    var cognome = normalizzaNome(d.cognome);
+    var nome = normalizzaNome(d.nome);
+    risultato.push({
+      cognome: cognome, nome: nome,
+      scuola: d.scuola || 'SCUOLA NON INDICATA',
+      reparto: d.reparto || '',
+      provincia: d.provincia || estraiProvincia(d.reparto || ''),
+      chiave: chiave,
+      tel: contatti[cognome+'|'+nome] || contatti[cognome] || d.tel || '',
+      mancante: false
+    });
+  });
+
+  return risultato;
+}
+
+// ── RENDER ───────────────────────────────────────────────────
 function render() {
   var lista = document.getElementById('lista');
   var inv = getInviati();
@@ -566,36 +781,265 @@ function render() {
   aggiornaProgress();
 }
 
-// ── AVVIO: carica destinazioni, segretari e invii gi\u00e0 fatti dallo stesso database di destino.html ──
-function nascondiSpinner() { document.getElementById('spinnerBox').style.display = 'none'; }
+// ── CARICA FILE DESTINAZIONI (stessa logica di destino.html) ──
+function processaFileDestinazioni(file) {
+  if(!file) return;
+  if(typeof XLSX === 'undefined') {
+    document.getElementById('lista').innerHTML = '<div class="errore">Libreria non caricata, ricarica la pagina.</div>';
+    return;
+  }
+  var reader = new FileReader();
+  reader.onload = function(ev) {
+    try {
+      var data = new Uint8Array(ev.target.result);
+      var wb = XLSX.read(data, { type:'array' });
+      var ws = wb.Sheets[wb.SheetNames[0]];
+      var rows = XLSX.utils.sheet_to_json(ws, { header:1, defval:'' });
 
-Promise.all([fbGet(FB_PATH_DEST), fbGet(FB_PATH_SEG), fbGet(FB_PATH_INVIATI_SEG)]).then(function(r) {
-  var dest = r[0], seg = r[1], inv = r[2];
-  nascondiSpinner();
+      var headerRow = -1;
+      for(var i = 0; i < Math.min(rows.length, 10); i++) {
+        var r = rows[i].map(function(c) { return String(c).toUpperCase(); });
+        if(r.some(function(c) { return c.includes('COGNOME'); }) && r.some(function(c) { return c.includes('NOME'); })) {
+          headerRow = i; break;
+        }
+      }
+      if(headerRow < 0) {
+        document.getElementById('lista').innerHTML = '<div class="errore">Intestazione non trovata. Il file deve avere colonne COGNOME, NOME, SCUOLA, ASSEGNATO C/O.</div>';
+        return;
+      }
 
-  if(!dest || !dest.length) {
-    document.getElementById('infoBox').style.display = 'block';
-    document.getElementById('infoBox').innerHTML = 'Non risulta ancora nessun file destinazioni caricato. Vai prima su <b>destino.html</b> e carica l\u2019Excel con le destinazioni, poi torna qui: questa pagina legge automaticamente gli stessi dati, non serve ricaricare nulla.';
+      var headers = rows[headerRow].map(function(c) { return String(c).toUpperCase().trim(); });
+      var iCognome   = headers.findIndex(function(h) { return h.includes('COGNOME'); });
+      var iNome      = headers.findIndex(function(h) { return h === 'NOME' || (h.includes('NOME') && !h.includes('COGNOME')); });
+      var iScuola    = headers.findIndex(function(h) { return h.includes('SCUOLA'); });
+      var iAssegnato = headers.findIndex(function(h) { return h.includes('ASSEGNATO'); });
+
+      var lette = [];
+      for(var j = headerRow + 1; j < rows.length; j++) {
+        var row = rows[j];
+        var cognome = normalizzaNome(row[iCognome]);
+        var nome    = normalizzaNome(row[iNome]);
+        if(!cognome && !nome) continue;
+        var scuola  = String(row[iScuola] || '').trim() || 'SCUOLA NON INDICATA';
+        var reparto = String(row[iAssegnato] || '').trim();
+        var provincia = estraiProvincia(reparto);
+        var chiave  = (cognome + '_' + nome).replace(/[^A-Z0-9_]/g,'');
+        var tel     = contatti[cognome + '|' + nome] || contatti[cognome] || '';
+        lette.push({ cognome:cognome, nome:nome, scuola:scuola, reparto:reparto, provincia:provincia, chiave:chiave, tel:tel });
+      }
+      destinazioniRaw = lette;
+      allAllievi = mergeConDestinazioni(destinazioniRaw);
+
+      document.getElementById('uploadBox').style.display = 'none';
+      document.getElementById('toolbar').classList.add('visible');
+      render();
+      avviaPolling();
+
+      document.getElementById('gasStatus').textContent = 'Salvataggio in corso\u2026';
+      salvaDestinazioniSuFirebase(destinazioniRaw).then(function(res) {
+        document.getElementById('gasStatus').textContent = res.ok
+          ? '\u2713 File destinazioni salvato (' + lette.length + ' righe). Visibile anche su destino.html.'
+          : '\u26A0\uFE0F Salvataggio fallito: ' + res.detail;
+      });
+    } catch(err) {
+      document.getElementById('lista').innerHTML = '<div class="errore">Errore lettura file: ' + err.message + '</div>';
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+document.getElementById('fileInput').addEventListener('change', function(e) {
+  processaFileDestinazioni(e.target.files[0]);
+});
+
+async function eliminaFile() {
+  if(!confirm('Elimini il file destinazioni? Verr\u00e0 rimosso anche da destino.html, la lista verr\u00e0 svuotata per tutti.')) return;
+  allAllievi = [];
+  destinazioniRaw = [];
+  document.getElementById('lista').innerHTML = '';
+  document.getElementById('progress').style.display = 'none';
+  document.getElementById('toolbar').classList.remove('visible');
+  document.getElementById('spinnerBox').style.display = 'none';
+  document.getElementById('uploadBox').style.display = 'block';
+  document.getElementById('fileInput').value = '';
+  document.getElementById('gasStatus').textContent = 'Eliminazione in corso\u2026';
+
+  var res = await eliminaDestinazioniSuFirebase();
+  var prefisso = contattiCaricati ? ('\u2713 ' + contattiCaricati + ' contatti caricati. ') : '';
+  document.getElementById('gasStatus').textContent = res.ok
+    ? (prefisso + 'File eliminato. Carica il nuovo file destinazioni.')
+    : (prefisso + 'File eliminato localmente, ma la cancellazione sul server non \u00e8 riuscita (' + res.detail + ').');
+}
+
+// ── CARICA FILE SEGRETARI (stessa logica di destino.html) ────
+document.getElementById('fileSegretari').addEventListener('change', function(e) {
+  var file = e.target.files[0];
+  if(!file) return;
+
+  if(typeof XLSX === 'undefined') {
+    document.getElementById('segretariStatus').textContent = '\u26A0\uFE0F Libreria non caricata, ricarica la pagina e riprova.';
     return;
   }
 
-  allAllievi = dest;
-  if(seg) SEGRETARI = seg;
-  if(inv) INVIATI = inv;
+  document.getElementById('segretariStatus').textContent = 'Caricamento in corso\u2026';
+  var reader = new FileReader();
+  reader.onload = function(ev) {
+    try {
+      var data = new Uint8Array(ev.target.result);
+      var wb = XLSX.read(data, { type:'array' });
+      var ws = wb.Sheets[wb.SheetNames[0]];
 
-  if(!Object.keys(SEGRETARI).length) {
-    document.getElementById('infoBox').style.display = 'block';
-    document.getElementById('infoBox').innerHTML = 'Non risulta ancora nessun file segretari caricato. Puoi caricarlo da <b>destino.html</b>, oppure inserire qui sotto il numero di ciascun segretario provincia per provincia, verr\u00e0 salvato comunque nel database condiviso.';
-  }
+      Object.keys(SEGRETARI).forEach(function(k) { delete SEGRETARI[k]; });
+      var trovati = 0;
 
-  document.getElementById('toolbar').classList.add('visible');
-  render();
-  avviaPolling();
-}).catch(function() {
-  nascondiSpinner();
-  document.getElementById('infoBox').style.display = 'block';
-  document.getElementById('infoBox').textContent = 'Errore nel caricamento dei dati. Ricarica la pagina.';
+      var jsonRows = XLSX.utils.sheet_to_json(ws, { defval:'' });
+      if(jsonRows.length > 0) {
+        var firstRow = jsonRows[0];
+        var allKeys = Object.keys(firstRow);
+
+        var kProv = allKeys.find(function(k){ return k.toUpperCase().includes('PROV'); }) || allKeys[0];
+        var kCog  = allKeys.find(function(k){ return k.toUpperCase() === 'COGNOME'; });
+        var kNome = allKeys.find(function(k){
+          var u = k.toUpperCase();
+          return u === 'NOME' || u.includes('SEGRETARIO');
+        }) || allKeys[1];
+        var kTel  = allKeys.find(function(k){
+          var u = k.toUpperCase();
+          return u.includes('TEL') || u.includes('CEL') || u.includes('NUMERO');
+        }) || allKeys[2];
+
+        jsonRows.forEach(function(row) {
+          var prov = String(row[kProv] || '').trim().toUpperCase();
+          var nomeCompleto = kCog
+            ? (String(row[kCog]||'').trim() + ' ' + String(row[kNome]||'').trim()).trim()
+            : String(row[kNome]||'').trim();
+          var tel = normalizzaTel(String(row[kTel] || '').trim());
+          if(prov && nomeCompleto) {
+            SEGRETARI[prov] = { nome:nomeCompleto, tel:tel };
+            trovati++;
+          }
+        });
+      }
+
+      document.getElementById('segretariStatus').textContent = trovati > 0
+        ? '\u2713 ' + trovati + ' segretari caricati'
+        : '\u26A0\uFE0F Nessun segretario trovato. Chiavi: ' + (jsonRows.length > 0 ? Object.keys(jsonRows[0]).join(', ') : 'file vuoto');
+      document.getElementById('eliminaSegBtn').style.display = 'inline-block';
+      if(allAllievi.length) render();
+
+      if(trovati > 0) {
+        salvaSegretariSuFirebase(SEGRETARI).then(function(res) {
+          if(!res.ok) document.getElementById('segretariStatus').textContent += ' \u2014 \u26A0\uFE0F salvataggio fallito: ' + res.detail;
+          else document.getElementById('segretariStatus').textContent += ' \u2014 \u2713 salvati, visibili anche su destino.html';
+        });
+      }
+    } catch(err) {
+      document.getElementById('segretariStatus').textContent = '\u26A0\uFE0F Errore: ' + err.message;
+    }
+  };
+  reader.readAsArrayBuffer(file);
 });
+
+async function eliminaSegretari() {
+  if(!confirm('Elimini il file segretari? Verr\u00e0 rimosso anche da destino.html.')) return;
+  Object.keys(SEGRETARI).forEach(function(k) { delete SEGRETARI[k]; });
+  document.getElementById('eliminaSegBtn').style.display = 'none';
+  document.getElementById('fileSegretari').value = '';
+  if(allAllievi.length) render();
+  document.getElementById('segretariStatus').textContent = 'Eliminazione in corso\u2026';
+
+  var res = await eliminaSegretariSuFirebase();
+  document.getElementById('segretariStatus').textContent = res.ok
+    ? 'Nessun file caricato'
+    : 'Nessun file caricato (cancellazione sul server non riuscita: ' + res.detail + ')';
+}
+
+// ── AVVIO: carica contatti GAS e dati destinazioni/segretari/inviati da Firebase ──
+document.getElementById('segretariStatus').textContent = 'Nessun file caricato';
+
+function nascondiSpinner() { document.getElementById('spinnerBox').style.display = 'none'; }
+function mostraUpload() { nascondiSpinner(); document.getElementById('uploadBox').style.display = 'block'; }
+
+function fetchContattiConRetry(tentativo) {
+  tentativo = tentativo || 1;
+  fetch(GAS_URL + '?action=getContatti')
+    .then(function(r) { return r.text(); })
+    .then(function(txt) {
+      var data;
+      try { data = JSON.parse(txt); }
+      catch(e) {
+        if(tentativo < 3) {
+          document.getElementById('gasStatus').textContent = 'Backend lento a rispondere, ritento\u2026 (' + tentativo + '/3)';
+          setTimeout(function(){ fetchContattiConRetry(tentativo + 1); }, 2500);
+          return;
+        }
+        mostraUpload();
+        document.getElementById('gasStatus').textContent = '\u26A0\uFE0F Backend non raggiunto dopo 3 tentativi: risposta non valida.';
+        return;
+      }
+      if(data.contatti) {
+        var visti = {};
+        var vistiNomi = {};
+        contattiList = [];
+        data.contatti.forEach(function(c) {
+          var tel = normalizzaTel(c.tel);
+          if(tel && !visti[tel]) {
+            visti[tel] = true;
+            contatti[normalizzaNome(c.cognome) + '|' + normalizzaNome(c.nome)] = tel;
+            contatti[normalizzaNome(c.cognome)] = tel;
+          }
+          var chiaveNome = normalizzaNome(c.cognome) + '|' + normalizzaNome(c.nome);
+          if(!vistiNomi[chiaveNome] && (c.cognome || c.nome)) {
+            vistiNomi[chiaveNome] = true;
+            contattiList.push({ cognome: c.cognome, nome: c.nome, scuola: c.scuola || '', tel: tel });
+          }
+        });
+        var nContatti = Object.keys(visti).length;
+        contattiCaricati = nContatti;
+        document.getElementById('gasStatus').textContent = '\u2713 ' + nContatti + ' contatti caricati.';
+
+        Promise.all([fbGet(FB_PATH_SEG), fbGet(FB_PATH_DEST), fbGet(FB_PATH_INVIATI_SEG)]).then(function(results) {
+          var seg = results[0], dest = results[1], inv = results[2];
+
+          if(seg && Object.keys(seg).length) {
+            SEGRETARI = seg;
+            document.getElementById('segretariStatus').textContent = '\u2713 ' + Object.keys(seg).length + ' segretari caricati';
+            document.getElementById('eliminaSegBtn').style.display = 'inline-block';
+          }
+
+          if(inv) INVIATI = inv;
+
+          if(dest && dest.length) {
+            destinazioniRaw = dest;
+            allAllievi = mergeConDestinazioni(destinazioniRaw);
+            nascondiSpinner();
+            document.getElementById('uploadBox').style.display = 'none';
+            document.getElementById('toolbar').classList.add('visible');
+            document.getElementById('gasStatus').textContent = '\u2713 ' + nContatti + ' contatti \u2014 \u2713 ' + destinazioniRaw.length + ' destinazioni caricate.';
+            render();
+            avviaPolling();
+          } else {
+            mostraUpload();
+            document.getElementById('gasStatus').textContent = '\u2713 ' + nContatti + ' contatti caricati. Ora carica il file destinazioni.';
+          }
+        }).catch(function(){ mostraUpload(); });
+      } else {
+        mostraUpload();
+        document.getElementById('gasStatus').textContent = '\u26A0\uFE0F Errore: ' + JSON.stringify(data);
+      }
+    })
+    .catch(function(err) {
+      if(tentativo < 3) {
+        document.getElementById('gasStatus').textContent = 'Backend lento a rispondere, ritento\u2026 (' + tentativo + '/3)';
+        setTimeout(function(){ fetchContattiConRetry(tentativo + 1); }, 2500);
+        return;
+      }
+      mostraUpload();
+      document.getElementById('gasStatus').textContent = '\u26A0\uFE0F Backend non raggiunto: ' + err.message;
+    });
+}
+
+fetchContattiConRetry();
 </script>
 </body>
 </html>
