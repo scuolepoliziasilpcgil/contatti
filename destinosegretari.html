@@ -1020,7 +1020,7 @@ function render() {
     var isInviato = !!inv[prov];
     var safeProv = prov.replace(/'/g, "\\'");
     var tel = seg && seg.tel ? seg.tel : '';
-    var waLink = tel ? ('https://wa.me/' + tel + '?text=' + buildMsg(seg.nome || 'collega', prov, elenco)) : '';
+    var waLink = tel ? ('https://wa.me/' + tel + '?text=' + buildMsg(seg.soloNome || seg.nome || 'collega', prov, elenco)) : '';
 
     html += '<div class="card' + (isInviato ? ' inviato' : '') + '" id="card_' + safeProv + '">';
     html += '<div class="card-top">';
@@ -1198,9 +1198,13 @@ document.getElementById('fileSegretari').addEventListener('change', function(e) 
           var nomeCompleto = kCog
             ? (String(row[kCog]||'').trim() + ' ' + String(row[kNome]||'').trim()).trim()
             : String(row[kNome]||'').trim();
+          // Solo il nome di battesimo, usato nel messaggio preimpostato al posto del nome completo
+          var soloNome = kCog
+            ? String(row[kNome]||'').trim()
+            : String(row[kNome]||'').trim().split(/\s+/)[0] || '';
           var tel = normalizzaTel(String(row[kTel] || '').trim());
           if(prov && nomeCompleto) {
-            SEGRETARI[prov] = { nome:nomeCompleto, tel:tel };
+            SEGRETARI[prov] = { nome:nomeCompleto, soloNome:soloNome || nomeCompleto, tel:tel };
             trovati++;
           }
         });
