@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Destinazioni Segretari 233 SILP CGIL rev.6</title>
+<title>Destinazioni Segretari 233 SILP CGIL rev.7</title>
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="icon" type="image/x-icon" href="favicon.ico">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -305,7 +305,7 @@ input[type=file] { display:none; }
     </div>
   </div>
   <div class="header-right">
-    <span class="rev-tag">rev.6</span>
+    <span class="rev-tag">rev.7</span>
     <button class="icon-btn" id="settingsBtn" title="Modifica messaggio">&#9881;</button>
   </div>
 </header>
@@ -383,7 +383,7 @@ input[type=file] { display:none; }
 <div id="lista"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script>var TITLE_TEMPLATE = 'Destinazioni Segretari {CORSO} SILP CGIL rev.6';</script>
+<script>var TITLE_TEMPLATE = 'Destinazioni Segretari {CORSO} SILP CGIL rev.7';</script>
 <script src="corso-config.js"></script>
 <script>
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbxsD7KImUy2Xa9egcfWmroGzoO1DEaHZwLt4Khocc4DOtAfGmSpPRrYUWufknSeV5fgoQ/exec';
@@ -932,7 +932,7 @@ function abilitaBtn(provKey, val) {
     SEGRETARI[provKey].tel = tel;
     btn.removeAttribute('disabled');
     var gruppi = raggruppaPerProvincia();
-    var nomeSeg = SEGRETARI[provKey].nome || 'collega';
+    var nomeSeg = SEGRETARI[provKey].soloNome || SEGRETARI[provKey].nome || 'collega';
     btn.href = 'https://wa.me/' + tel + '?text=' + buildMsg(nomeSeg, provKey, gruppi[provKey]);
     salvaSegretariSuFirebase(SEGRETARI);
   } else {
