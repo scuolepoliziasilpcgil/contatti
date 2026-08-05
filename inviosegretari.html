@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Invio Segretari 233 SILP CGIL rev.1</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="icon" type="image/x-icon" href="favicon.ico">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --blu:#005CA9;
+  --verde:#25D366;
+  --rosso:#C8102E;
+  --grigio:#bbb;
+  --sfondo:#f0f2f5;
+}
+* { box-sizing:border-box; margin:0; padding:0; }
+body { font-family:'Inter',sans-serif; background:var(--sfondo); padding:1rem; }
+
+header {
+  background:var(--blu);
+  color:#fff;
+  padding:.9rem 1.4rem;
+  border-radius:10px;
+  margin-bottom:1rem;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:.5rem;
+  flex-wrap:wrap;
+}
+.header-left { display:flex; align-items:center; gap:.9rem; }
+.header-left img { width:2.4rem; height:2.4rem; border-radius:4px; object-fit:cover; flex:0 0 auto; }
+.header-eyebrow { font-family:'IBM Plex Mono',monospace; font-size:.62rem; letter-spacing:.15em; text-transform:uppercase; opacity:.7; }
+.header-title { font-size:1rem; font-weight:700; margin-top:.1rem; }
+.header-right { display:flex; align-items:center; gap:.7rem; }
+.rev-tag { font-family:'IBM Plex Mono',monospace; font-size:.6rem; opacity:.45; }
+.icon-btn {
+  background:rgba(255,255,255,.15);
+  border:none;
+  color:#fff;
+  width:2rem;
+  height:2rem;
+  border-radius:50%;
+  cursor:pointer;
+  font-size:1.1rem;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  transition:background .15s;
+  flex:0 0 auto;
+}
+.icon-btn:hover { background:rgba(255,255,255,.3); }
+
+.progress {
+  background:#fff;
+  border-radius:8px;
+  padding:.5rem 1rem;
+  margin-bottom:.8rem;
+  font-size:.85rem;
+  color:var(--blu);
+  font-weight:700;
+  text-align:center;
+  display:none;
+}
+
+.toolbar {
+  display:none;
+  justify-content:flex-end;
+  gap:.5rem;
+  margin-bottom:.5rem;
+}
+.toolbar.visible { display:flex; }
+.danger-btn {
+  background:var(--rosso);
+  color:#fff;
+  border:none;
+  border-radius:8px;
+  padding:.4rem .9rem;
+  font-size:.8rem;
+  font-weight:700;
+  cursor:pointer;
+}
+
+.card {
+  background:#fff;
+  border-radius:10px;
+  padding:.9rem 1.1rem;
+  margin:.5rem 0;
+  box-shadow:0 1px 3px rgba(0,0,0,.08);
+  transition:opacity .3s;
+}
+.card.inviato { opacity:.5; }
+.card-top { display:flex; align-items:flex-start; justify-content:space-between; gap:.8rem; flex-wrap:wrap; }
+.provincia { font-weight:700; font-size:1rem; color:var(--blu); }
+.seg-nome { font-size:.85rem; color:#333; margin-top:.15rem; }
+.seg-nome b { color:#111; }
+.num-allievi { font-size:.76rem; color:#777; margin-top:.15rem; }
+.data-invio { font-size:.7rem; color:var(--verde); margin-top:.3rem; }
+.data-invio a { color:#c0392b; text-decoration:underline; }
+.no-seg { font-size:.76rem; color:#e67e22; margin-top:.25rem; }
+.tel-input {
+  border:1px solid #ccc;
+  border-radius:8px;
+  padding:.45rem .7rem;
+  font-size:.85rem;
+  width:158px;
+  font-family:'Inter',sans-serif;
+}
+.tel-input:focus { outline:none; border-color:var(--blu); }
+.wa-btn {
+  display:inline-flex;
+  align-items:center;
+  gap:.4rem;
+  background:var(--verde);
+  color:#fff;
+  text-decoration:none;
+  border-radius:8px;
+  padding:.55rem 1rem;
+  font-size:.85rem;
+  font-weight:700;
+  white-space:nowrap;
+  border:none;
+  cursor:pointer;
+  transition:background .2s;
+  flex:0 0 auto;
+}
+.wa-btn[disabled], .wa-btn.inviato {
+  background:var(--grigio);
+  pointer-events:none;
+  cursor:default;
+}
+.elenco-allievi {
+  margin-top:.6rem;
+  font-size:.78rem;
+  color:#555;
+  background:#f7f9fc;
+  border-radius:8px;
+  padding:.6rem .8rem;
+  line-height:1.6;
+}
+.elenco-allievi div { display:flex; justify-content:space-between; gap:.6rem; }
+.elenco-allievi span.tel { color:#999; font-family:'IBM Plex Mono',monospace; font-size:.72rem; }
+
+.overlay {
+  display:none;
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.55);
+  z-index:100;
+  align-items:center;
+  justify-content:center;
+  padding:1rem;
+}
+.overlay.open { display:flex; }
+.panel {
+  background:#fff;
+  border-radius:14px;
+  padding:1.4rem;
+  width:100%;
+  max-width:620px;
+  max-height:90vh;
+  overflow-y:auto;
+}
+.panel h2 { font-size:1rem; color:var(--blu); margin-bottom:1rem; font-weight:700; }
+.field-label {
+  font-size:.75rem;
+  font-weight:700;
+  color:#444;
+  letter-spacing:.06em;
+  text-transform:uppercase;
+  display:block;
+  margin:.9rem 0 .3rem;
+}
+.field-label:first-of-type { margin-top:0; }
+.panel textarea, .panel input[type=text] {
+  width:100%;
+  border:1px solid #ccc;
+  border-radius:8px;
+  padding:.7rem;
+  font-size:.88rem;
+  font-family:'Inter',sans-serif;
+  line-height:1.5;
+}
+.panel textarea { resize:vertical; min-height:140px; }
+.panel textarea:focus, .panel input:focus { outline:none; border-color:var(--blu); }
+.legenda {
+  background:#f0f6ff;
+  border-radius:8px;
+  padding:.75rem 1rem;
+  font-size:.78rem;
+  margin-top:1rem;
+  line-height:1.7;
+  color:#333;
+}
+.legenda code {
+  background:#ddeeff;
+  border-radius:4px;
+  padding:.1rem .35rem;
+  font-family:monospace;
+  font-size:.82rem;
+  color:var(--blu);
+}
+.panel-footer {
+  display:flex;
+  gap:.6rem;
+  margin-top:1.2rem;
+  justify-content:flex-end;
+  flex-wrap:wrap;
+}
+.ghost-btn {
+  background:transparent;
+  border:1px solid var(--blu);
+  color:var(--blu);
+  border-radius:8px;
+  padding:.5rem 1.1rem;
+  font-size:.85rem;
+  font-weight:700;
+  cursor:pointer;
+}
+.primary-btn {
+  background:var(--blu);
+  color:#fff;
+  border:none;
+  border-radius:8px;
+  padding:.5rem 1.3rem;
+  font-size:.85rem;
+  font-weight:700;
+  cursor:pointer;
+}
+.spinner-box { background:#fff; border-radius:10px; padding:2.5rem 1.4rem; margin-bottom:1rem; text-align:center; }
+.spinner { width:2.5rem; height:2.5rem; border:3px solid #e0ecf8; border-top-color:#005CA9; border-radius:50%; animation:spin .8s linear infinite; margin:0 auto .8rem; }
+@keyframes spin { to { transform:rotate(360deg); } }
+.spinner-label { font-size:.88rem; color:#666; }
+.errore {
+  background:#fdecea;
+  color:#c0392b;
+  border-radius:8px;
+  padding:.8rem 1rem;
+  margin:.5rem 0;
+  font-size:.88rem;
+}
+.info-box {
+  background:#fff;
+  border-radius:10px;
+  padding:1.2rem 1.4rem;
+  margin-bottom:1rem;
+  font-size:.85rem;
+  color:#555;
+  line-height:1.6;
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <img src="logo.jpg" alt="SILP CGIL">
+    <div>
+      <div class="header-eyebrow">Coordinamento Nazionale SILP CGIL</div>
+      <div class="header-title">&#128222; Segretari &mdash; Invio riepilogo <span class="corso-label">233&deg;</span></div>
+    </div>
+  </div>
+  <div class="header-right">
+    <span class="rev-tag">rev.1</span>
+    <button class="icon-btn" id="settingsBtn" title="Modifica messaggio">&#9881;</button>
+  </div>
+</header>
+
+<!-- OVERLAY MODIFICA MESSAGGIO -->
+<div class="overlay" id="msgOverlay">
+  <div class="panel">
+    <h2>&#9999;&#65039; Impostazioni messaggio</h2>
+
+    <span class="field-label">Testo del messaggio per il segretario</span>
+    <textarea id="msgPrincipale" rows="9"></textarea>
+
+    <span class="field-label">Firma</span>
+    <input type="text" id="msgFirma">
+
+    <div class="legenda">
+      <strong>Variabili nel testo:</strong><br>
+      <code>{SEGRETARIO}</code> &mdash; Nome del segretario provinciale<br>
+      <code>{PROVINCIA}</code> &mdash; Provincia di destinazione<br>
+      <code>{NUMERO}</code> &mdash; Quanti allievi arrivano in quella provincia<br>
+      <code>{LISTA}</code> &mdash; Elenco allievi (nome e telefono, una riga ciascuno)<br>
+      <code>{FIRMA}</code> &mdash; La firma impostata sopra
+    </div>
+
+    <div class="panel-footer">
+      <button class="ghost-btn" onclick="resetMsg()">Ripristina originale</button>
+      <button class="ghost-btn" onclick="document.getElementById('msgOverlay').classList.remove('open')">Annulla</button>
+      <button class="primary-btn" onclick="salvaMsg()">Salva</button>
+    </div>
+  </div>
+</div>
+
+<!-- SPINNER -->
+<div class="spinner-box" id="spinnerBox">
+  <div class="spinner"></div>
+  <div class="spinner-label">Caricamento dati in corso&hellip;</div>
+</div>
+
+<!-- MESSAGGIO SE NON CI SONO ANCORA DATI -->
+<div class="info-box" id="infoBox" style="display:none;"></div>
+
+<!-- TOOLBAR -->
+<div class="toolbar" id="toolbar">
+  <button class="danger-btn" onclick="resetTuttiInviati()">&#128260; Reset tutti gli invii</button>
+</div>
+
+<!-- PROGRESS -->
+<div class="progress" id="progress"></div>
+
+<!-- LISTA PROVINCE -->
+<div id="lista"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>var TITLE_TEMPLATE = 'Invio Segretari {CORSO} SILP CGIL rev.1';</script>
+<script src="corso-config.js"></script>
+<script>
+var SEGRETARI = {};
+var INVIATI = {};
+var allAllievi = [];
+var pollingTimer = null;
+var KEY_MSG = 'inviosegretari233_msg';
+
+// ── FIREBASE (stesso database e stesso corso di destino.html) ───
+var FIREBASE_DB = 'https://quizassegnazioni-default-rtdb.europe-west1.firebasedatabase.app';
+var FB_PATH_DEST = 'qiv2/destino233/destinazioni';
+var FB_PATH_SEG  = 'qiv2/destino233/segretari';
+var FB_PATH_INVIATI_SEG = 'qiv2/destino233/inviatiSegretari';
+
+async function fbSet(path, data) {
+  try {
+    var r = await fetch(FIREBASE_DB + '/' + path + '.json', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    if(r.ok) return { ok:true };
+    var errBody = '';
+    try { var j = await r.json(); errBody = j.error || ''; } catch(e2) {}
+    return { ok:false, detail:'HTTP ' + r.status + (errBody ? ' \u2014 ' + errBody : '') };
+  } catch(e) { return { ok:false, detail:'errore di rete: ' + e.message }; }
+}
+async function fbDelete(path) {
+  try {
+    var r = await fetch(FIREBASE_DB + '/' + path + '.json', { method: 'DELETE' });
+    if(r.ok) return { ok:true };
+    return { ok:false, detail:'HTTP ' + r.status };
+  } catch(e) { return { ok:false, detail:'errore di rete: ' + e.message }; }
+}
+async function fbGet(path) {
+  try {
+    var r = await fetch(FIREBASE_DB + '/' + path + '.json?t=' + Date.now());
+    if(!r.ok) return null;
+    return await r.json();
+  } catch(e) { return null; }
+}
+
+function normalizzaTel(tel) {
+  var t = String(tel || '').replace(/\s+/g,'').replace(/^\+/,'');
+  if(t.startsWith('39') && t.length > 11) return t;
+  if(t.startsWith('3')) return '39' + t;
+  return t;
+}
+
+// ── MESSAGGIO DEFAULT ─────────────────────────────────────────
+var DEFAULT_PRINCIPALE = 'Ciao {SEGRETARIO},\nti aggiorniamo sugli allievi del 233\u00b0 corso assegnati alla tua provincia, {PROVINCIA}. Sono {NUMERO} in arrivo:\n{LISTA}\nTi chiediamo di prendere contatto con loro nei prossimi giorni, presentarti e farli sentire parte della famiglia SILP CGIL fin da subito.\nSe ti servono altri dati o materiale per il primo contatto scrivici pure.\n{FIRMA}';
+var DEFAULT_FIRMA = 'Il Coordinamento Nazionale SILP CGIL';
+
+function getMsg() {
+  try { return JSON.parse(localStorage.getItem(KEY_MSG) || 'null') || {}; } catch(e) { return {}; }
+}
+function getMsgPrincipale() { return getMsg().principale || DEFAULT_PRINCIPALE; }
+function getMsgFirma() { return getMsg().firma || DEFAULT_FIRMA; }
+
+function salvaMsg() {
+  var m = {
+    principale: document.getElementById('msgPrincipale').value.trim() || DEFAULT_PRINCIPALE,
+    firma: document.getElementById('msgFirma').value.trim() || DEFAULT_FIRMA
+  };
+  localStorage.setItem(KEY_MSG, JSON.stringify(m));
+  document.getElementById('msgOverlay').classList.remove('open');
+  if(allAllievi.length) render();
+}
+function resetMsg() {
+  document.getElementById('msgPrincipale').value = DEFAULT_PRINCIPALE;
+  document.getElementById('msgFirma').value = DEFAULT_FIRMA;
+}
+function apriPannello() {
+  document.getElementById('msgPrincipale').value = getMsgPrincipale();
+  document.getElementById('msgFirma').value = getMsgFirma();
+  document.getElementById('msgOverlay').classList.add('open');
+}
+document.getElementById('settingsBtn').addEventListener('click', apriPannello);
+
+function buildMsg(segNome, provincia, elenco) {
+  var lista = elenco.map(function(a) {
+    return '\u2022 ' + a.nome + ' ' + a.cognome + (a.tel ? ' (+' + a.tel + ')' : ' (numero non disponibile)');
+  }).join('\n');
+  var testo = getMsgPrincipale()
+    .replace(/\{SEGRETARIO\}/g, segNome)
+    .replace(/\{PROVINCIA\}/g, provincia)
+    .replace(/\{NUMERO\}/g, elenco.length)
+    .replace(/\{LISTA\}/g, lista)
+    .replace(/\{FIRMA\}/g, getMsgFirma());
+  return encodeURIComponent(testo);
+}
+
+// ── ANTI-DOPPIO INVIO (condiviso su Firebase, per provincia) ────
+function getInviati() { return INVIATI; }
+
+function segna(provKey, btnEl, cardEl) {
+  var now = new Date().toLocaleString('it-IT');
+  INVIATI[provKey] = now;
+  btnEl.classList.add('inviato');
+  btnEl.innerHTML = '\u2713 Inviato';
+  cardEl.classList.add('inviato');
+  var dataEl = cardEl.querySelector('.data-invio');
+  if(dataEl) dataEl.innerHTML = '\u2713 Inviato il ' + now + ' &middot; <a href="#" onclick="annullaInvio(\'' + provKey.replace(/'/g,"\\'") + '\'); return false;">annulla</a>';
+  aggiornaProgress();
+  fbSet(FB_PATH_INVIATI_SEG + '/' + provKey, now).then(function(res) {
+    if(!res.ok && dataEl) dataEl.textContent = 'Inviato (salvataggio condiviso non riuscito, resta solo su questo dispositivo per ora)';
+  });
+}
+
+function annullaInvio(provKey) {
+  if(!confirm('Annulli l\'invio segnato per questa provincia? Il pulsante "Invia WA" torner\u00e0 disponibile per tutti.')) return;
+  delete INVIATI[provKey];
+  fbDelete(FB_PATH_INVIATI_SEG + '/' + provKey);
+  render();
+}
+
+async function resetTuttiInviati() {
+  if(!confirm('Sei sicuro di voler azzerare TUTTI gli invii ai segretari segnati finora? Questa azione \u00e8 irreversibile e vale per tutti i dispositivi collegati.')) return;
+  var res = await fbDelete(FB_PATH_INVIATI_SEG);
+  if(res.ok) { INVIATI = {}; render(); alert('Invii azzerati per tutti.'); }
+  else alert('Errore durante l\'azzeramento: ' + res.detail);
+}
+
+function avviaPolling() {
+  if(pollingTimer) return;
+  pollingTimer = setInterval(function() {
+    Promise.all([fbGet(FB_PATH_INVIATI_SEG), fbGet(FB_PATH_DEST), fbGet(FB_PATH_SEG)]).then(function(r) {
+      var inv = r[0], dest = r[1], seg = r[2];
+      var cambiato = false;
+      if(inv) {
+        Object.keys(inv).forEach(function(k) { if(INVIATI[k] !== inv[k]) { INVIATI[k] = inv[k]; cambiato = true; } });
+      }
+      if(seg) { SEGRETARI = seg; cambiato = true; }
+      if(dest && dest.length !== allAllievi.length) {
+        allAllievi = dest;
+        cambiato = true;
+      }
+      if(cambiato) render();
+    });
+  }, 20000);
+}
+
+function aggiornaProgress() {
+  var inv = getInviati();
+  var gruppi = raggruppaPerProvincia();
+  var conSeg = Object.keys(gruppi).filter(function(p) { return SEGRETARI[p] && SEGRETARI[p].tel; }).length;
+  var inviati = Object.keys(gruppi).filter(function(p) { return inv[p]; }).length;
+  var el = document.getElementById('progress');
+  el.style.display = 'block';
+  el.textContent = inviati + ' / ' + Object.keys(gruppi).length + ' province contattate  \u2022  ' + conSeg + ' segretari con numero disponibile';
+}
+
+var WA_SVG = '<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>';
+
+function raggruppaPerProvincia() {
+  var gruppi = {};
+  allAllievi.forEach(function(a) {
+    if(!a.reparto) return; // salta chi non ha ancora destinazione
+    var prov = (a.provincia || '').toUpperCase().trim();
+    if(!prov) return;
+    if(!gruppi[prov]) gruppi[prov] = [];
+    gruppi[prov].push(a);
+  });
+  return gruppi;
+}
+
+function abilitaBtn(provKey, val) {
+  var tel = normalizzaTel(val);
+  var btn = document.getElementById('btn_' + provKey);
+  if(!btn) return;
+  if(tel.length >= 11) {
+    if(!SEGRETARI[provKey]) SEGRETARI[provKey] = {};
+    SEGRETARI[provKey].tel = tel;
+    btn.removeAttribute('disabled');
+    var gruppi = raggruppaPerProvincia();
+    var nomeSeg = SEGRETARI[provKey].nome || 'collega';
+    btn.href = 'https://wa.me/' + tel + '?text=' + buildMsg(nomeSeg, provKey, gruppi[provKey]);
+  } else {
+    btn.setAttribute('disabled', '');
+  }
+}
+
+function render() {
+  var lista = document.getElementById('lista');
+  var inv = getInviati();
+  var gruppi = raggruppaPerProvincia();
+  var province = Object.keys(gruppi).sort();
+
+  if(!province.length) {
+    lista.innerHTML = '';
+    document.getElementById('progress').style.display = 'none';
+    return;
+  }
+
+  var html = '';
+  province.forEach(function(prov) {
+    var elenco = gruppi[prov];
+    var seg = SEGRETARI[prov];
+    var isInviato = !!inv[prov];
+    var safeProv = prov.replace(/'/g, "\\'");
+    var tel = seg && seg.tel ? seg.tel : '';
+    var waLink = tel ? ('https://wa.me/' + tel + '?text=' + buildMsg(seg.nome || 'collega', prov, elenco)) : '';
+
+    html += '<div class="card' + (isInviato ? ' inviato' : '') + '" id="card_' + safeProv + '">';
+    html += '<div class="card-top">';
+    html += '<div>';
+    html += '<div class="provincia">' + prov + '</div>';
+    if(seg && seg.nome) {
+      html += '<div class="seg-nome">Segretario: <b>' + seg.nome + '</b>' + (tel ? ' &#8226; +' + tel : '') + '</div>';
+    } else {
+      html += '<div class="no-seg">&#9888;&#65039; Segretario provinciale non ancora inserito</div>';
+    }
+    html += '<div class="num-allievi">' + elenco.length + ' allievo/i in arrivo</div>';
+    if(isInviato) {
+      html += '<div class="data-invio">\u2713 Inviato il ' + inv[prov] + ' &middot; <a href="#" onclick="annullaInvio(\'' + safeProv + '\'); return false;">annulla</a></div>';
+    }
+    html += '</div>';
+
+    if(tel) {
+      html += '<a class="wa-btn' + (isInviato ? ' inviato' : '') + '" id="btn_' + safeProv + '"';
+      html += ' href="' + waLink + '" target="_blank"';
+      html += ' onclick="segna(\'' + safeProv + '\', this, document.getElementById(\'card_' + safeProv + '\'))">';
+      html += isInviato ? '\u2713 Inviato' : (WA_SVG + ' Invia WA');
+      html += '</a>';
+    } else {
+      html += '<div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;">';
+      html += '<input class="tel-input" type="tel" placeholder="39XXXXXXXXXX" oninput="abilitaBtn(\'' + safeProv + '\', this.value)">';
+      html += '<a class="wa-btn" id="btn_' + safeProv + '" disabled onclick="segna(\'' + safeProv + '\', this, document.getElementById(\'card_' + safeProv + '\'))">' + WA_SVG + ' Invia WA</a>';
+      html += '</div>';
+    }
+    html += '</div>';
+
+    html += '<div class="elenco-allievi">';
+    elenco.forEach(function(a) {
+      html += '<div><span>' + a.nome + ' ' + a.cognome + '</span><span class="tel">' + (a.tel ? '+' + a.tel : 'no numero') + '</span></div>';
+    });
+    html += '</div>';
+
+    html += '</div>';
+  });
+
+  lista.innerHTML = html;
+  aggiornaProgress();
+}
+
+// ── AVVIO: carica destinazioni, segretari e invii gi\u00e0 fatti dallo stesso database di destino.html ──
+function nascondiSpinner() { document.getElementById('spinnerBox').style.display = 'none'; }
+
+Promise.all([fbGet(FB_PATH_DEST), fbGet(FB_PATH_SEG), fbGet(FB_PATH_INVIATI_SEG)]).then(function(r) {
+  var dest = r[0], seg = r[1], inv = r[2];
+  nascondiSpinner();
+
+  if(!dest || !dest.length) {
+    document.getElementById('infoBox').style.display = 'block';
+    document.getElementById('infoBox').innerHTML = 'Non risulta ancora nessun file destinazioni caricato. Vai prima su <b>destino.html</b> e carica l\u2019Excel con le destinazioni, poi torna qui: questa pagina legge automaticamente gli stessi dati, non serve ricaricare nulla.';
+    return;
+  }
+
+  allAllievi = dest;
+  if(seg) SEGRETARI = seg;
+  if(inv) INVIATI = inv;
+
+  if(!Object.keys(SEGRETARI).length) {
+    document.getElementById('infoBox').style.display = 'block';
+    document.getElementById('infoBox').innerHTML = 'Non risulta ancora nessun file segretari caricato. Puoi caricarlo da <b>destino.html</b>, oppure inserire qui sotto il numero di ciascun segretario provincia per provincia, verr\u00e0 salvato comunque nel database condiviso.';
+  }
+
+  document.getElementById('toolbar').classList.add('visible');
+  render();
+  avviaPolling();
+}).catch(function() {
+  nascondiSpinner();
+  document.getElementById('infoBox').style.display = 'block';
+  document.getElementById('infoBox').textContent = 'Errore nel caricamento dei dati. Ricarica la pagina.';
+});
+</script>
+</body>
+</html>
