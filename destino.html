@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Destinazioni 233 SILP CGIL rev.29</title>
+<title>Destinazioni 233 SILP CGIL rev.31</title>
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="icon" type="image/x-icon" href="favicon.ico">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -316,7 +316,7 @@ input[type=file] { display:none; }
     </div>
   </div>
   <div class="header-right">
-    <span class="rev-tag">rev.29</span>
+    <span class="rev-tag">rev.31</span>
     <button class="icon-btn" id="settingsBtn" title="Modifica messaggio">&#9881;</button>
   </div>
 </header>
@@ -400,7 +400,7 @@ input[type=file] { display:none; }
 <div id="lista"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script>var TITLE_TEMPLATE = 'Destinazioni {CORSO} SILP CGIL rev.29';</script>
+<script>var TITLE_TEMPLATE = 'Destinazioni {CORSO} SILP CGIL rev.31';</script>
 <script src="corso-config.js"></script>
 <script>
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbxsD7KImUy2Xa9egcfWmroGzoO1DEaHZwLt4Khocc4DOtAfGmSpPRrYUWufknSeV5fgoQ/exec';
@@ -445,61 +445,320 @@ var PROVINCIA_REGIONE = {
   'VENEZIA':'VENETO','VERONA':'VENETO','VICENZA':'VENETO'
 };
 
-// ── PROVINCE NOTE DAL FILE POSTI 233° ───────────────────────
-// Mappa parole chiave nei nomi reparto -> provincia SILP
-var PROVINCE_MAP = {
-  'ALESSANDRIA':'ALESSANDRIA','ANCONA':'ANCONA','AOSTA':'AOSTA',
-  'AREZZO':'AREZZO','ASTI':'ASTI','AVELLINO':'AVELLINO','BARI':'BARI',
-  'BELLUNO':'BELLUNO','BENEVENTO':'BENEVENTO','BERGAMO':'BERGAMO',
-  'BIELLA':'BIELLA','BOLOGNA':'BOLOGNA','BOLZANO':'BOLZANO',
-  'BRESCIA':'BRESCIA','CAGLIARI':'CAGLIARI','COMO':'COMO',
-  'COSENZA':'COSENZA','CREMONA':'CREMONA','CROTONE':'CROTONE',
-  'CUNEO':'CUNEO','FERMO':'FERMO','FERRARA':'FERRARA',
-  'FIRENZE':'FIRENZE','FOGGIA':'FOGGIA','FROSINONE':'FROSINONE',
-  'GENOVA':'GENOVA','GORIZIA':'GORIZIA','GROSSETO':'GROSSETO',
-  'IMPERIA':'IMPERIA','AQUILA':"L'AQUILA",'SPEZIA':'LA SPEZIA',
-  'LATINA':'LATINA','LECCE':'LECCE','LECCO':'LECCO',
-  'LIVORNO':'LIVORNO','LODI':'LODI','LUCCA':'LUCCA',
-  'MACERATA':'MACERATA','MANTOVA':'MANTOVA','MASSA':'MASSA CARRARA',
-  'MESSINA':'MESSINA','MILANO':'MILANO','MODENA':'MODENA',
-  'MONZA':'MONZA-BRIANZA','BRIANZA':'MONZA-BRIANZA',
-  'NAPOLI':'NAPOLI','NOVARA':'NOVARA','NUORO':'NUORO',
-  'PADOVA':'PADOVA','PALERMO':'PALERMO','PARMA':'PARMA',
-  'PAVIA':'PAVIA','PERUGIA':'PERUGIA','PESARO':'PESARO - URBINO',
-  'PIACENZA':'PIACENZA','PISA':'PISA','PISTOIA':'PISTOIA',
-  'PORDENONE':'PORDENONE','POTENZA':'POTENZA','PRATO':'PRATO',
-  'RAVENNA':'RAVENNA','REGGIO':'REGGIO CALABRIA',  // default Calabria, override sotto
-  'RIETI':'RIETI','RIMINI':'RIMINI','ROMA':'ROMA',
-  'ROVIGO':'ROVIGO','SALERNO':'SALERNO','SASSARI':'SASSARI',
-  'SAVONA':'SAVONA','SIENA':'SIENA','SIRACUSA':'SIRACUSA',
-  'SONDRIO':'SONDRIO','TARANTO':'TARANTO','TERAMO':'TERAMO',
-  'TERNI':'TERNI','TORINO':'TORINO','TRAPANI':'TRAPANI',
-  'TRENTO':'TRENTO','TREVISO':'TREVISO','TRIESTE':'TRIESTE',
-  'UDINE':'UDINE','VARESE':'VARESE','VENEZIA':'VENEZIA',
-  'VERBANIA':'VERBANIA','VERCELLI':'VERCELLI','VERONA':'VERONA',
-  'VIBO':'VIBO VALENTIA','VICENZA':'VICENZA','VITERBO':'VITERBO',
-  // override Reggio
-  'EMILIA':'REGGIO EMILIA','CALABRIA':'REGGIO CALABRIA',
-  'CAGLIARI':'CAGLIARI','FORL':'FORLI\' - CESENA',
+// ── PROVINCE, riconoscimento verificato su tutte le 342 voci dell'elenco nazionale 233° ──
+// Tre livelli: nomi di comuni/localita' specifici, poi nomi di provincia generici,
+// infine sedi regionali senza nome di comune (capoluogo di compartimento).
+var PROVINCE_SPECIFIC = {
+  'CASALE SUD':'Alessandria',
+  'OVADA':'Alessandria',
+  'TORTONA':'Alessandria',
+  'PONT ST.MARTIN':'Aosta',
+  'COURMAYER':'Aosta',
+  'TRAFORO MONTE BIANCO':'Aosta',
+  'LIMONE PIEMONTE':'Cuneo',
+  'ROMAGNANO SESIA':'Novara',
+  'NOVARA EST':'Novara',
+  'ARONA':'Novara',
+  'SUSA':'Torino',
+  'BARDONECCHIA':'Torino',
+  'VARALLO SESIA':'Vercelli',
+  'ALTEDO':'Bologna',
+  'BOLOGNA SUD':'Bologna',
+  'PIAN DEL VOGLIO':'Bologna',
+  'BORGO PANIGALE':'Bologna',
+  'BORGOPANIGALE':'Bologna',
+  'FORLI':'Forlì Cesena',
+  'BAGNO DI ROMAGNA':'Forlì Cesena',
+  'CESENA':'Forlì Cesena',
+  'BERCETO':'Parma',
+  'NOVAFELTRIA':'Rimini',
+  'VIPITENO':'Bolzano',
+  'BRESSANONE':'Bolzano',
+  'BRENNERO':'Bolzano',
+  'RIVA DEL GARDA':'Trento',
+  'ROVERETO':'Trento',
+  'TREVIGLIO':'Bergamo',
+  'ORIO AL SERIO':'Bergamo',
+  'CHIARI':'Brescia',
+  'SALA COMACINA':'Como',
+  'PONTE CHIASSO':'Como',
+  'CASALMAGGIORE':'Cremona',
+  'BELLANO':'Lecco',
+  'GUARDAMIGLIO':'Lodi',
+  'S.DONATO MILANESE':'Milano',
+  'NOVATE MILANESE':'Milano',
+  'LINATE':'Milano',
+  'VOGHERA':'Pavia',
+  'TIRANO':'Sondrio',
+  'GALLARATE':'Varese',
+  'LUINO':'Varese',
+  'MALPENSA':'Varese',
+  'MONZA':'Monza Brianza',
+  'VENTIMIGLIA':'Imperia',
+  'SANREMO':'Imperia',
+  'BRUGNATO':'La Spezia',
+  'CARCARE':'Savona',
+  'ALBENGA':'Savona',
+  'ALASSIO':'Savona',
+  'SAN GIOVANNI VALDARNO':'Arezzo',
+  'PONTREMOLI':'Massa Carrara',
+  'BARGA':'Lucca',
+  'VIAREGGIO':'Lucca',
+  'FORTE DEI MARMI':'Lucca',
+  'MONTECATINI':'Pistoia',
+  'PESCIA':'Pistoia',
+  'VOLTERRA':'Pisa',
+  'SESTO FIORENTINO':'Firenze',
+  'FABRIANO':'Ancona',
+  'JESI':'Ancona',
+  'OSIMO':'Ancona',
+  'FANO':'Pesaro Urbino',
+  'URBINO':'Pesaro Urbino',
+  'ALBANO LAZIALE':'Roma',
+  'MARINO':'Roma',
+  'CITTA\' DI CASTELLO':'Perugia',
+  'ASSISI':'Perugia',
+  'SPOLETO':'Perugia',
+  'CASSINO':'Frosinone',
+  'FIUGGI':'Frosinone',
+  'SORA':'Frosinone',
+  'FONDI':'Latina',
+  'AVEZZANO':'L\'Aquila',
+  'TARQUINIA':'Viterbo',
+  'ORVIETO':'Terni',
+  'ISPETTORATO':'Roma',
+  'PALAZZO CHIGI':'Roma',
+  'VATICANO':'Roma',
+  'PALAZZO VIMINALE':'Roma',
+  'VIMINALE':'Roma',
+  'SPINACETO':'Roma',
+  'OSTIA':'Roma',
+  'SCUOLA SUPERIORE POLIZIA':'Roma',
+  'MUGGIA':'Trieste',
+  'FERNETTI':'Trieste',
+  'VILLA OPICINA':'Trieste',
+  'RABUIESE':'Trieste',
+  'PALMANOVA':'Udine',
+  'AMARO':'Udine',
+  'TARVISIO':'Udine',
+  'CIVIDALE':'Udine',
+  'TOLMEZZO':'Udine',
+  'MONFALCONE':'Gorizia',
+  'RONCHI DEI LEG':'Gorizia',
+  'S.DONA\' DI PIAVE':'Venezia',
+  'CHIOGGIA':'Venezia',
+  'IESOLO':'Venezia',
+  'PORTOGRUARO':'Venezia',
+  'CASTELFRANCO VENETO':'Treviso',
+  'CONEGLIANO':'Treviso',
+  'ADRIA':'Rovigo',
+  'PORTO TOLLE':'Rovigo',
+  'OMEGNA':'Verbania',
+  'TREBISACCE':'Cosenza',
+  'GIOIA TAURO':'Reggio Calabria',
+  'PALMI':'Reggio Calabria',
+  'CITTANOVA':'Reggio Calabria',
+  'BOVALINO':'Reggio Calabria',
+  'TAURIANOVA':'Reggio Calabria',
+  'POLISTENA':'Reggio Calabria',
+  'ROGHUDI':'Reggio Calabria',
+  'CONDOFURI':'Reggio Calabria',
+  'BRANCALEONE':'Reggio Calabria',
+  'TROPEA':'Vibo Valentia',
+  'BITTI':'Nuoro',
+  'GAVOI':'Nuoro',
+  'LANUSEI':'Nuoro',
+  'ORGOSOLO':'Nuoro',
+  'IGLESIAS':'Cagliari',
+  'CARBONIA':'Cagliari',
+  'ALGHERO':'Sassari',
+  'TEMPIO PAUSANIA':'Sassari',
+  'PORTO CERVO':'Sassari',
+  'ARZACHENA':'Sassari',
+  'LAURO DI NOLA':'Avellino',
+  'SANT\'ANGELO DEI LOMBARDI':'Avellino',
+  'CERVINARA':'Avellino',
+  'CAVA DEI TIRRENI':'Salerno',
+  'CEFALU':'Palermo',
+  'TERMINI IMERESE':'Palermo',
+  'BARCELLONA POZZO DI GOTTO':'Messina',
+  'PATTI':'Messina',
+  'TAORMINA':'Messina',
+  'NOTO':'Siracusa',
+  'CASTELLAMMARE DEL GOLFO':'Trapani',
+  'MELFI':'Potenza',
+  'GROTTAGLIE':'Taranto',
+  'ATRI':'Teramo',
+  'PORTOFERRAIO':'Livorno',
+  'ROSIGNANO SOLVAY':'Livorno',
+  'CREMA':'Cremona',
+  'VIGEVANO':'Pavia',
+  'CARPI':'Modena',
+  'MIRANDOLA':'Modena',
+  'SASSUOLO':'Modena',
+  'FAENZA':'Ravenna',
+  'LUGO':'Ravenna',
+  'CHIUSI CHIANCIANO':'Siena',
+  'POGGIBONSI':'Siena',
+  'IMOLA':'Bologna',
+  'CHIAVARI':'Genova',
 };
 
-function estraiProvincia(reparto) {
-  var r = reparto.toUpperCase();
-  // Cerca prima match esatto con chiavi lunghe (es. REGGIO CALABRIA)
-  var chiavi = Object.keys(PROVINCE_MAP).sort(function(a,b){ return b.length - a.length; });
-  for(var i = 0; i < chiavi.length; i++) {
-    if(r.indexOf(chiavi[i]) >= 0) return PROVINCE_MAP[chiavi[i]];
-  }
-  // Fallback: prima parola significativa
-  var parole = r.split(/[\s,\.]+/).filter(function(p){
-    return p.length > 2 && ['QUESTURA','DI','COMMISSARIATO','POLIZIA','STRADALE',
-      'FERROVIARIA','POSTALE','SCIENTIFICA','MOBILE','REPARTO','UFFICIO',
-      'SQUADRA','CENTRO','SUD','NORD','EST','OVEST','P','S','PS',
-      'COMPARTIMENTO','COMP','SEZIONE','SEZIONI','OPERATIVE','INTERNE',
-      'SOTTOSEZIONE','AUTOSTRADALE','DISTACCAMENTO','ZONA','FRONTIERA'].indexOf(p) < 0;
-  });
-  return parole.length ? parole[0] : '';
+var PROVINCE_GENERIC = {
+  'ALESSANDRIA':'Alessandria',
+  'ANCONA':'Ancona',
+  'AREZZO':'Arezzo',
+  'ASTI':'Asti',
+  'AVELLINO':'Avellino',
+  'BARI':'Bari',
+  'BELLUNO':'Belluno',
+  'BENEVENTO':'Benevento',
+  'BERGAMO':'Bergamo',
+  'BIELLA':'Biella',
+  'BOLOGNA':'Bologna',
+  'BOLZANO':'Bolzano',
+  'BRESCIA':'Brescia',
+  'CAGLIARI':'Cagliari',
+  'COMO':'Como',
+  'COSENZA':'Cosenza',
+  'CREMONA':'Cremona',
+  'CROTONE':'Crotone',
+  'CUNEO':'Cuneo',
+  'FERMO':'Fermo',
+  'FERRARA':'Ferrara',
+  'FIRENZE':'Firenze',
+  'FOGGIA':'Foggia',
+  'FROSINONE':'Frosinone',
+  'GENOVA':'Genova',
+  'GORIZIA':'Gorizia',
+  'GROSSETO':'Grosseto',
+  'IMPERIA':'Imperia',
+  'L\'AQUILA':'L\'Aquila',
+  'LA SPEZIA':'La Spezia',
+  'LATINA':'Latina',
+  'LECCE':'Lecce',
+  'LECCO':'Lecco',
+  'LIVORNO':'Livorno',
+  'LODI':'Lodi',
+  'LUCCA':'Lucca',
+  'MACERATA':'Macerata',
+  'MANTOVA':'Mantova',
+  'MASSA CARRARA':'Massa Carrara',
+  'MESSINA':'Messina',
+  'MILANO':'Milano',
+  'MODENA':'Modena',
+  'MONZA BRIANZA':'Monza Brianza',
+  'NAPOLI':'Napoli',
+  'NOVARA':'Novara',
+  'NUORO':'Nuoro',
+  'PADOVA':'Padova',
+  'PALERMO':'Palermo',
+  'PARMA':'Parma',
+  'PAVIA':'Pavia',
+  'PERUGIA':'Perugia',
+  'PESARO':'Pesaro Urbino',
+  'PIACENZA':'Piacenza',
+  'PISA':'Pisa',
+  'PISTOIA':'Pistoia',
+  'PORDENONE':'Pordenone',
+  'POTENZA':'Potenza',
+  'PRATO':'Prato',
+  'RAVENNA':'Ravenna',
+  'RIETI':'Rieti',
+  'RIMINI':'Rimini',
+  'ROMA':'Roma',
+  'ROVIGO':'Rovigo',
+  'SALERNO':'Salerno',
+  'SASSARI':'Sassari',
+  'SAVONA':'Savona',
+  'SIENA':'Siena',
+  'SIRACUSA':'Siracusa',
+  'SONDRIO':'Sondrio',
+  'TARANTO':'Taranto',
+  'TERAMO':'Teramo',
+  'TERNI':'Terni',
+  'TORINO':'Torino',
+  'TRAPANI':'Trapani',
+  'TRENTO':'Trento',
+  'TREVISO':'Treviso',
+  'TRIESTE':'Trieste',
+  'UDINE':'Udine',
+  'VARESE':'Varese',
+  'VENEZIA':'Venezia',
+  'VERBANO CUSIO OSSOLA':'Verbania',
+  'VERBANIA':'Verbania',
+  'VERCELLI':'Vercelli',
+  'VERONA':'Verona',
+  'VIBO VALENTIA':'Vibo Valentia',
+  'VICENZA':'Vicenza',
+  'VITERBO':'Viterbo',
+  'REGGIO EMILIA':'Reggio Emilia',
+  'REGGIO CALABRIA':'Reggio Calabria',
+  'AOSTA':'Aosta',
+  'ISERNIA':'Isernia',
+};
+
+var PROVINCE_TAGS = {
+  'FRIULI VENEZIA GIULIA':' TAGFVG ',
+  'EMILIA ROMAGNA':' TAGER ',
+  'PIEMONTE E V. D\'AOSTA':' TAGPIEMVDA ',
+  'PIEMONTE - VAL D\'AOSTA':' TAGPIEMVDA ',
+  'VAL D\'AOSTA':' TAGVDA ',
+  'TRENTINO ALTO ADIGE':' TAGTAA ',
+  'VERONA E TRENTINO A. ADIGE':' TAGVERTRENT ',
+  'LAZIO E UMBRIA':' TAGLAZUMB ',
+  'MARCHE - UMBRIA - ABRUZZO':' TAGMARCHE ',
+};
+
+var PROVINCE_HQ_FALLBACK = [
+  ['POLFER TAGMARCHE','Ancona'],
+  ['CIBERNETICA MARCHE','Ancona'],
+  ['POLFER TAGER','Bologna'],
+  ['POLFER LIGURIA','Genova'],
+  ['POLFER TOSCANA-SEZIONI OPERATIVE INTERNE','Firenze'],
+  ['CIBERNETICA TOSCANA','Firenze'],
+  ['POLFER LOMBARDIA-SEZIONI OPERATIVE INTERNE','Milano'],
+  ['CIBERNETICA LOMBARDIA-SEZIONI OPERATIVE INTERNE','Milano'],
+  ['ZONA T L C LOMBARDIA','Milano'],
+  ['CIBERNETICA LAZIO','Roma'],
+  ['POLSTRADA PIEMONTE-TAGVDA-CENTRO OPERATIVO AUTOSTRADALE','Torino'],
+  ['POLSTRADA PIEMONTE- TAGVDA -CENTRO OPERATIVO AUTOSTRADALE','Torino'],
+  ['CIBERNETICA TAGPIEMVDA','Torino'],
+  ['ZONA T L C TAGPIEMVDA','Torino'],
+  ['ZONA T L C TAGFVG','Trieste'],
+  ['POLFER TAGVERTRENT','Verona'],
+  ['POLFER VENETO','Venezia'],
+  ['LOMBARDIA','Milano'],
+];
+var PROVINCE_SPECIFIC_KEYS = Object.keys(PROVINCE_SPECIFIC).sort(function(a,b){ return b.length - a.length; });
+var PROVINCE_GENERIC_KEYS = Object.keys(PROVINCE_GENERIC).sort(function(a,b){ return b.length - a.length; });
+
+function taggifyProvincia(text) {
+  Object.keys(PROVINCE_TAGS).forEach(function(p) { text = text.split(p).join(PROVINCE_TAGS[p]); });
+  return text.replace(/\s+/g, ' ').trim();
 }
+
+function hasWordProvincia(text, kw) {
+  var esc = kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  var re = new RegExp('(?<![A-Z0-9\'])' + esc + '(?![A-Z0-9])');
+  return re.test(text);
+}
+
+function estraiProvincia(reparto) {
+  var r = taggifyProvincia(String(reparto || '').toUpperCase());
+  for (var i = 0; i < PROVINCE_SPECIFIC_KEYS.length; i++) {
+    if (hasWordProvincia(r, PROVINCE_SPECIFIC_KEYS[i])) return PROVINCE_SPECIFIC[PROVINCE_SPECIFIC_KEYS[i]];
+  }
+  for (var j = 0; j < PROVINCE_GENERIC_KEYS.length; j++) {
+    if (hasWordProvincia(r, PROVINCE_GENERIC_KEYS[j])) return PROVINCE_GENERIC[PROVINCE_GENERIC_KEYS[j]];
+  }
+  for (var k = 0; k < PROVINCE_HQ_FALLBACK.length; k++) {
+    if (r.indexOf(PROVINCE_HQ_FALLBACK[k][0]) >= 0) return PROVINCE_HQ_FALLBACK[k][1];
+  }
+  return '';
+}
+
+
 
 // ── MESSAGGI DEFAULT ─────────────────────────────────────────
 var DEFAULT_PRINCIPALE = 'Ciao {NOME}, \u00e8 arrivata la tua destinazione: {REPARTO}! \uD83C\uDF89\nFinalmente ci siamo. Spero che sia la destinazione che speravi, o almeno una che ti dar\u00e0 l\u2019opportunit\u00e0 di crescere e fare bene.\nDa oggi fai parte di una realt\u00e0 concreta e noi del SILP CGIL siamo l\u00ec con te. {SEGRETARIO_MSG}\nNel frattempo se hai dubbi, domande o semplicemente vuoi capire cosa ti aspetta, scrivici senza pensarci.\nIn bocca al lupo e benvenuto/a nella famiglia SILP CGIL. \uD83C\uDF40\n{FIRMA}';
@@ -865,6 +1124,7 @@ function processaFileDestinazioni(file) {
       var cognome = normalizzaNome(row[iCognome]);
       var nome    = normalizzaNome(row[iNome]);
       if(!cognome && !nome) continue;
+      if(cognome === 'COGNOME' && nome === 'NOME') continue; // intestazione ripetuta in mezzo al file
       var scuola  = String(row[iScuola] || '').trim() || 'SCUOLA NON INDICATA';
       var reparto = String(row[iAssegnato >= 0 ? iAssegnato : iAssegnato] || '').trim();
       var provincia = estraiProvincia(reparto);
