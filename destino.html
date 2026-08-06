@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Destinazioni 233 SILP CGIL rev.32</title>
+<title>Destinazioni 233 SILP CGIL rev.33</title>
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="icon" type="image/x-icon" href="favicon.ico">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -316,7 +316,7 @@ input[type=file] { display:none; }
     </div>
   </div>
   <div class="header-right">
-    <span class="rev-tag">rev.32</span>
+    <span class="rev-tag">rev.33</span>
     <button class="icon-btn" id="settingsBtn" title="Modifica messaggio">&#9881;</button>
   </div>
 </header>
@@ -400,7 +400,7 @@ input[type=file] { display:none; }
 <div id="lista"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script>var TITLE_TEMPLATE = 'Destinazioni {CORSO} SILP CGIL rev.32';</script>
+<script>var TITLE_TEMPLATE = 'Destinazioni {CORSO} SILP CGIL rev.33';</script>
 <script src="corso-config.js"></script>
 <script>
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbxsD7KImUy2Xa9egcfWmroGzoO1DEaHZwLt4Khocc4DOtAfGmSpPRrYUWufknSeV5fgoQ/exec';
@@ -900,8 +900,17 @@ function segna(chiave, btnEl, cardEl) {
   btnEl.classList.add('inviato');
   btnEl.innerHTML = '\u2713 Inviato';
   cardEl.classList.add('inviato');
+  var safeChiave = chiave.replace(/'/g, "\\'");
   var dataEl = cardEl.querySelector('.data-invio');
-  if(dataEl) dataEl.textContent = 'Inviato il ' + now;
+  if(!dataEl) {
+    // Prima volta che questa card viene segnata in questa sessione: la scritta
+    // con data e link "annulla" non esiste ancora nel DOM, la creo qui.
+    dataEl = document.createElement('div');
+    dataEl.className = 'data-invio';
+    var infoEl = cardEl.querySelector('.info');
+    if(infoEl) infoEl.appendChild(dataEl);
+  }
+  dataEl.innerHTML = '\u2713 Inviato il ' + now + ' &middot; <a href="#" onclick="annullaInvio(\'' + safeChiave + '\'); return false;">annulla</a>';
   aggiornaProgress();
   // Scrive solo questa chiave su Firebase, senza toccare gli invii altrui
   fbSet(FB_PATH_INVIATI + '/' + chiave, now).then(function(res) {

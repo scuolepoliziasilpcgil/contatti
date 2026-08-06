@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Destinazioni Segretari 233 SILP CGIL rev.7</title>
+<title>Destinazioni Segretari 233 SILP CGIL rev.8</title>
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="icon" type="image/x-icon" href="favicon.ico">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -305,7 +305,7 @@ input[type=file] { display:none; }
     </div>
   </div>
   <div class="header-right">
-    <span class="rev-tag">rev.7</span>
+    <span class="rev-tag">rev.8</span>
     <button class="icon-btn" id="settingsBtn" title="Modifica messaggio">&#9881;</button>
   </div>
 </header>
@@ -383,7 +383,7 @@ input[type=file] { display:none; }
 <div id="lista"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script>var TITLE_TEMPLATE = 'Destinazioni Segretari {CORSO} SILP CGIL rev.7';</script>
+<script>var TITLE_TEMPLATE = 'Destinazioni Segretari {CORSO} SILP CGIL rev.8';</script>
 <script src="corso-config.js"></script>
 <script>
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbxsD7KImUy2Xa9egcfWmroGzoO1DEaHZwLt4Khocc4DOtAfGmSpPRrYUWufknSeV5fgoQ/exec';
@@ -858,8 +858,15 @@ function segna(provKey, btnEl, cardEl) {
   btnEl.classList.add('inviato');
   btnEl.innerHTML = '\u2713 Inviato';
   cardEl.classList.add('inviato');
+  var safeProv = provKey.replace(/'/g, "\\'");
   var dataEl = cardEl.querySelector('.data-invio');
-  if(dataEl) dataEl.innerHTML = '\u2713 Inviato il ' + now + ' &middot; <a href="#" onclick="annullaInvio(\'' + provKey.replace(/'/g,"\\'") + '\'); return false;">annulla</a>';
+  if(!dataEl) {
+    dataEl = document.createElement('div');
+    dataEl.className = 'data-invio';
+    var numEl = cardEl.querySelector('.num-allievi');
+    if(numEl && numEl.parentNode) numEl.parentNode.appendChild(dataEl);
+  }
+  dataEl.innerHTML = '\u2713 Inviato il ' + now + ' &middot; <a href="#" onclick="annullaInvio(\'' + safeProv + '\'); return false;">annulla</a>';
   aggiornaProgress();
   fbSet(FB_PATH_INVIATI_SEG + '/' + provKey, now).then(function(res) {
     if(!res.ok && dataEl) dataEl.textContent = 'Inviato (salvataggio condiviso non riuscito, resta solo su questo dispositivo per ora)';
