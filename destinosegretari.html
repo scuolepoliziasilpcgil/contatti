@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Destinazioni Segretari 233 SILP CGIL rev.8</title>
+<title>Destinazioni Segretari 233 SILP CGIL rev.9</title>
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="icon" type="image/x-icon" href="favicon.ico">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -305,7 +305,7 @@ input[type=file] { display:none; }
     </div>
   </div>
   <div class="header-right">
-    <span class="rev-tag">rev.8</span>
+    <span class="rev-tag">rev.9</span>
     <button class="icon-btn" id="settingsBtn" title="Modifica messaggio">&#9881;</button>
   </div>
 </header>
@@ -383,7 +383,7 @@ input[type=file] { display:none; }
 <div id="lista"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script>var TITLE_TEMPLATE = 'Destinazioni Segretari {CORSO} SILP CGIL rev.8';</script>
+<script>var TITLE_TEMPLATE = 'Destinazioni Segretari {CORSO} SILP CGIL rev.9';</script>
 <script src="corso-config.js"></script>
 <script>
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbxsD7KImUy2Xa9egcfWmroGzoO1DEaHZwLt4Khocc4DOtAfGmSpPRrYUWufknSeV5fgoQ/exec';
@@ -764,7 +764,10 @@ function normalizzaTel(tel) {
   return t;
 }
 function normalizzaNome(s) {
-  return String(s || '').trim().toUpperCase().replace(/\s+/g,' ');
+  return String(s || '').trim().toUpperCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // toglie gli accenti (Patanè -> PATANE)
+    .replace(/[\u2018\u2019\u02BC\u00B4\u0060]/g, "'") // uniforma i vari tipi di apostrofo
+    .replace(/\s+/g,' ');
 }
 
 // ── MESSAGGIO DEFAULT ─────────────────────────────────────────
