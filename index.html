@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SILP CGIL · Lascia i tuoi contatti — rev.9</title>
+<title>SILP CGIL · Lascia i tuoi contatti — rev.10</title>
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="icon" type="image/x-icon" href="favicon.ico">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -295,7 +295,7 @@
 <header>
   <img src="logo.jpg" alt="SILP CGIL">
   SILP CGIL · Coordinamento Scuole di Polizia
-  <span class="rev-tag">rev.9</span>
+  <span class="rev-tag">rev.10</span>
   <button class="icon-btn" id="adminBtn" title="Amministrazione" onclick="apriAdminPanel()">&#9881;</button>
 </header>
 
@@ -372,8 +372,22 @@
       I dati inseriti verranno utilizzati esclusivamente per essere ricontattati dal SILP CGIL in risposta alle tue richieste. Autorizzi la conservazione e il trattamento ai sensi della normativa vigente sulla privacy.
     </div>
 
+    <div class="field" id="otpBlock" style="display:none;">
+      <label for="otpCode">Codice ricevuto via SMS</label>
+      <input type="text" id="otpCode" placeholder="123456" inputmode="numeric" maxlength="6" autocomplete="one-time-code">
+      <div class="btn-group" style="margin-top:.6rem;">
+        <button class="btn btn-invia" id="btnVerificaOtp" onclick="verificaEInvia()">
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>
+          Verifica e invia
+        </button>
+        <button class="btn" id="btnSkipOtp" onclick="inviaSenzaVerifica()" style="background:transparent;border:1px solid rgba(247,243,232,.3);color:var(--crema);">
+          Non ho ricevuto il codice, invia comunque
+        </button>
+      </div>
+    </div>
+
     <div class="btn-group">
-      <button class="btn btn-invia" id="btnInvia" onclick="submit('form')">
+      <button class="btn btn-invia" id="btnInvia" onclick="richiediOtp()">
         <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
         Invia
       </button>
@@ -621,18 +635,15 @@
     } catch(e){ /* silenzioso */ }
 
     const btnMap = {
-      'form':'btnInvia',
       'wa-gianluca':'btnGianluca',
       'wa-michela':'btnMichela',
       'wa-terzo':'btnTerzo'
     };
     const btnId = btnMap[canale];
 
-    if(canale === 'wa-gianluca' || canale === 'wa-michela' || canale === 'wa-terzo'){
-      const numero = canale === 'wa-gianluca' ? WA_GIANLUCA : canale === 'wa-michela' ? WA_MICHELA : WA_TERZO_NUMERO;
-      const msg = buildWaMsg(d);
-      window.location.href = 'https://wa.me/' + numero + '?text=' + msg;
-    }
+    const numero = canale === 'wa-gianluca' ? WA_GIANLUCA : canale === 'wa-michela' ? WA_MICHELA : WA_TERZO_NUMERO;
+    const msg = buildWaMsg(d);
+    window.location.href = 'https://wa.me/' + numero + '?text=' + msg;
 
     setLoading(btnId, true);
     try {
@@ -643,15 +654,107 @@
         if(!inviati.includes(telPulito)){ inviati.push(telPulito); }
         localStorage.setItem(KEY_INVIATI, JSON.stringify(inviati));
       } catch(e){ /* silenzioso */ }
-      if(canale === 'form'){
-        showFeedback('Contatto salvato. Ti ricontatteremo presto!', 'ok');
-      }
     } catch(e){
-      if(canale === 'form'){
-        showFeedback("Errore nell'invio. Riprova o scatta uno screenshot.", 'err');
-      }
+      /* silenzioso, l'utente sta già passando su WhatsApp */
     } finally {
       setLoading(btnId, false);
+    }
+  }
+
+  // ── FORM PUBBLICO: richiesta e verifica OTP ──────────────────
+
+  function telefonoPulito(d){
+    return (d.cellulare || '').replace(/\s+/g,'').replace(/^\+/,'');
+  }
+
+  function giaInviato(telPulito){
+    try {
+      const inviati = JSON.parse(localStorage.getItem('silp233_inviati') || '[]');
+      return inviati.includes(telPulito);
+    } catch(e){ return false; }
+  }
+
+  async function richiediOtp(){
+    const d = getFormData();
+    const err = validate(d);
+    if(err){ showFeedback(err, 'err'); return; }
+
+    if(giaInviato(telefonoPulito(d))){
+      showFeedback('Hai già lasciato i tuoi contatti. Ti ricontatteremo presto!', 'ok');
+      return;
+    }
+
+    setLoading('btnInvia', true);
+    try {
+      const res = await fetch(GAS_URL, {
+        method:'POST',
+        headers:{'Content-Type':'text/plain'},
+        body: JSON.stringify({action:'requestOtp', cellulare:d.cellulare})
+      });
+      const esito = await res.json();
+      document.getElementById('otpBlock').style.display = 'block';
+      document.getElementById('otpCode').value = '';
+      document.getElementById('otpBlock').scrollIntoView({behavior:'smooth', block:'nearest'});
+      if(esito.status === 'OK'){
+        showFeedback('Ti abbiamo inviato un codice via SMS. Inseriscilo qui sotto.', 'ok');
+      } else {
+        showFeedback("Non siamo riusciti a inviare il codice via SMS. Puoi riprovare con Invia, oppure inviare comunque i tuoi contatti qui sotto.", 'err');
+      }
+    } catch(e){
+      document.getElementById('otpBlock').style.display = 'block';
+      showFeedback("Errore di rete nell'invio del codice. Puoi riprovare con Invia, oppure inviare comunque i tuoi contatti qui sotto.", 'err');
+    } finally {
+      setLoading('btnInvia', false);
+    }
+  }
+
+  async function verificaEInvia(){
+    const d = getFormData();
+    const codice = document.getElementById('otpCode').value.trim();
+    if(!codice){ showFeedback('Inserisci il codice ricevuto via SMS.', 'err'); return; }
+
+    setLoading('btnVerificaOtp', true);
+    try {
+      const res = await fetch(GAS_URL, {
+        method:'POST',
+        headers:{'Content-Type':'text/plain'},
+        body: JSON.stringify({action:'verifyOtp', cellulare:d.cellulare, pin:codice})
+      });
+      const esito = await res.json();
+      if(esito.status === 'OK'){
+        await completaInvio(d, 'si');
+      } else {
+        const tentativi = (esito.triesRemaining !== undefined) ? (' Tentativi rimasti: ' + esito.triesRemaining + '.') : '';
+        showFeedback('Codice non corretto.' + tentativi, 'err');
+      }
+    } catch(e){
+      showFeedback('Errore di rete nella verifica del codice. Riprova.', 'err');
+    } finally {
+      setLoading('btnVerificaOtp', false);
+    }
+  }
+
+  async function inviaSenzaVerifica(){
+    const d = getFormData();
+    await completaInvio(d, 'no');
+  }
+
+  async function completaInvio(d, verificato){
+    const telPulito = telefonoPulito(d);
+    setLoading('btnInvia', true);
+    try {
+      await saveToSheet({...d, canale:'form', verificato});
+      try {
+        const inviati = JSON.parse(localStorage.getItem('silp233_inviati') || '[]');
+        if(!inviati.includes(telPulito)){ inviati.push(telPulito); }
+        localStorage.setItem('silp233_inviati', JSON.stringify(inviati));
+      } catch(e){ /* silenzioso */ }
+      document.getElementById('otpBlock').style.display = 'none';
+      showFeedback('Contatto salvato. Ti ricontatteremo presto!', 'ok');
+    } catch(e){
+      showFeedback("Errore nell'invio. Riprova o scatta uno screenshot.", 'err');
+    } finally {
+      setLoading('btnInvia', false);
     }
   }
 </script>
