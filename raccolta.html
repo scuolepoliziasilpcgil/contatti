@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SILP CGIL · Segnala un allievo</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="icon" type="image/x-icon" href="favicon.ico">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --blu-deep:#234C72;
+    --blu:#3A6CA0;
+    --rosso:#C8102E;
+    --giallo:#FFE699;
+    --crema:#F7F3E8;
+    --radius:14px;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{
+    min-height:100vh;
+    font-family:'Inter',sans-serif;
+    background:var(--blu-deep);
+    color:var(--crema);
+  }
+  body{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding:0 0 3rem;
+  }
+
+  header{
+    width:100%;
+    background:rgba(255,255,255,.07);
+    border-bottom:1px solid rgba(247,243,232,.12);
+    display:flex;
+    align-items:center;
+    gap:.8rem;
+    padding:.9rem 1.4rem;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:.78rem;
+    letter-spacing:.12em;
+    text-transform:uppercase;
+    color:var(--crema);
+    opacity:.9;
+  }
+  header img{
+    width:2.4rem;
+    height:2.4rem;
+    border-radius:8px;
+    object-fit:cover;
+    flex:0 0 auto;
+  }
+
+  .corso-bar{
+    width:100%;
+    max-width:520px;
+    margin:1.2rem auto 0;
+    padding:0 1.2rem;
+    text-align:center;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:.85rem;
+    letter-spacing:.06em;
+    opacity:.85;
+  }
+
+  .card{
+    width:100%;
+    max-width:520px;
+    margin:1.6rem auto 0;
+    padding:0 1.2rem;
+  }
+  .card-inner{
+    background:rgba(255,255,255,.06);
+    border:1px solid rgba(247,243,232,.12);
+    border-radius:var(--radius);
+    padding:1.8rem 1.6rem 2rem;
+  }
+  .card-title{
+    font-size:1.25rem;
+    font-weight:800;
+    color:var(--crema);
+    margin-bottom:.3rem;
+  }
+  .card-sub{
+    font-size:.85rem;
+    opacity:.65;
+    line-height:1.5;
+    margin-bottom:1.6rem;
+  }
+
+  .field{
+    display:flex;
+    flex-direction:column;
+    gap:.4rem;
+    margin-bottom:1.1rem;
+  }
+  .field label{
+    font-size:.78rem;
+    font-weight:700;
+    letter-spacing:.06em;
+    text-transform:uppercase;
+    opacity:.75;
+  }
+  .field input,
+  .field select,
+  .field textarea{
+    background:rgba(255,255,255,.09);
+    border:1px solid rgba(247,243,232,.22);
+    border-radius:10px;
+    color:var(--crema);
+    font-family:'Inter',sans-serif;
+    font-size:1rem;
+    padding:.75rem 1rem;
+    width:100%;
+    transition:border-color .2s, box-shadow .2s;
+    -webkit-appearance:none;
+    appearance:none;
+  }
+  .field select{
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23F7F3E8' stroke-width='1.8' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;
+    background-position:right 1rem center;
+    padding-right:2.5rem;
+    cursor:pointer;
+  }
+  .field select option{background:#234C72; color:var(--crema);}
+  .field textarea{resize:vertical; min-height:4.5rem; line-height:1.5;}
+  .field input:focus,
+  .field select:focus,
+  .field textarea:focus{
+    outline:none;
+    border-color:var(--giallo);
+    box-shadow:0 0 0 3px rgba(255,230,153,.18);
+  }
+  .field input::placeholder,
+  .field textarea::placeholder{opacity:.4;}
+
+  .privacy{
+    font-size:.72rem;
+    line-height:1.55;
+    opacity:.5;
+    margin:1.4rem 0 1.6rem;
+    padding-top:1.1rem;
+    border-top:1px solid rgba(247,243,232,.1);
+  }
+
+  .btn{
+    width:100%;
+    padding:.9rem 1.2rem;
+    border:none;
+    border-radius:12px;
+    font-family:'Inter',sans-serif;
+    font-size:1rem;
+    font-weight:700;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:.6rem;
+    transition:opacity .15s, transform .1s;
+    letter-spacing:.01em;
+    background:var(--rosso);
+    color:#fff;
+  }
+  .btn:active{transform:scale(.97); opacity:.88;}
+  .btn:hover{opacity:.88;}
+  .btn svg{flex:0 0 auto;}
+
+  .feedback{
+    display:none;
+    margin-top:1.2rem;
+    padding:1rem 1.2rem;
+    border-radius:10px;
+    font-size:.9rem;
+    font-weight:600;
+    line-height:1.5;
+    text-align:center;
+  }
+  .feedback.ok{background:rgba(79,166,107,.18); border:1px solid rgba(79,166,107,.4); color:#a8f0bc;}
+  .feedback.err{background:rgba(200,16,46,.15); border:1px solid rgba(200,16,46,.4); color:#ffaaaa;}
+
+  .btn.loading{opacity:.6; pointer-events:none;}
+  .spinner{
+    display:inline-block;
+    width:1rem; height:1rem;
+    border:2px solid rgba(255,255,255,.4);
+    border-top-color:#fff;
+    border-radius:50%;
+    animation:spin .7s linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  @media(max-width:400px){
+    .card-inner{padding:1.4rem 1.1rem 1.6rem;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <img src="logo.jpg" alt="SILP CGIL">
+  SILP CGIL · Segnalazione allievi
+</header>
+
+<div class="corso-bar">
+  <span class="corso-label">233&deg;</span> Corso Allievi Agenti
+  <input type="hidden" id="corsoInput">
+</div>
+
+<div class="card">
+  <div class="card-inner">
+    <div class="card-title">Segnala un allievo</div>
+    <div class="card-sub">Inserisci i dati dell'allievo che hai incontrato, verr&agrave; ricontattato dal coordinamento.</div>
+
+    <div class="field">
+      <label for="nome">Nome</label>
+      <input type="text" id="nome" placeholder="Mario" autocomplete="given-name">
+    </div>
+    <div class="field">
+      <label for="cognome">Cognome</label>
+      <input type="text" id="cognome" placeholder="Rossi" autocomplete="family-name">
+    </div>
+    <div class="field">
+      <label for="dataNascita">Data di nascita</label>
+      <input type="date" id="dataNascita">
+    </div>
+    <div class="field">
+      <label for="cellulare">Cellulare</label>
+      <input type="tel" id="cellulare" placeholder="333 1234567" autocomplete="tel">
+    </div>
+    <div class="field">
+      <label for="scuola">Scuola</label>
+      <select id="scuola">
+        <option value="">— Seleziona la scuola —</option>
+        <option>Scuola allievi agenti di Alessandria</option>
+        <option>Scuola allievi agenti di Campobasso</option>
+        <option>Scuola allievi agenti di Caserta</option>
+        <option>Scuola allievi agenti di Peschiera del Garda</option>
+        <option>Scuola allievi agenti di Piacenza</option>
+        <option>Scuola allievi agenti di Trieste</option>
+        <option>Scuola allievi agenti di Vibo Valentia</option>
+        <option>Centro addestramento Polizia di Stato di Cesena</option>
+        <option>Centro addestramento e istruzione professionale di Abbasanta</option>
+        <option>Istituto per ispettori di Nettuno</option>
+        <option>Istituto per sovrintendenti di Spoleto</option>
+        <option>Scuola alpina di Moena</option>
+        <option>Scuola di polizia giudiziaria, amministrativa e investigativa di Brescia</option>
+        <option>Scuola per il controllo del territorio di Pescara</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="note">Note <span style="font-weight:400;opacity:.6;">(facoltativo)</span></label>
+      <textarea id="note" placeholder="Preferenze di destinazione, informazioni utili, altro…"></textarea>
+    </div>
+    <div class="field">
+      <label for="segnalatoDa">Segnalato da (inserisci il tuo cognome e nome)</label>
+      <input type="text" id="segnalatoDa" placeholder="Cognome Nome">
+    </div>
+
+    <div class="privacy">
+      I dati inseriti verranno utilizzati esclusivamente per essere ricontattati dal SILP CGIL in risposta alle richieste dell'allievo. Autorizzi la conservazione e il trattamento ai sensi della normativa vigente sulla privacy.
+    </div>
+
+    <button class="btn" id="btnInvia" onclick="invia()">
+      <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+      Invia
+    </button>
+
+    <div class="feedback" id="feedback"></div>
+  </div>
+</div>
+
+<script src="corso-config.js"></script>
+<script>
+  const GAS_URL = 'https://script.google.com/macros/s/' + 'AKfycbxsD7KImUy2Xa9egcfWmroGzoO1DEaHZwLt4Khocc4DOtAfGmSpPRrYUWufknSeV5fgoQ' + '/exec';
+
+  function getCourseNumber(){
+    return document.getElementById('corsoInput').value.trim() || '—';
+  }
+
+  function getFormData(){
+    return {
+      corso:       getCourseNumber(),
+      nome:        document.getElementById('nome').value.trim(),
+      cognome:     document.getElementById('cognome').value.trim(),
+      dataNascita: document.getElementById('dataNascita').value,
+      cellulare:   document.getElementById('cellulare').value.trim(),
+      scuola:      document.getElementById('scuola').value,
+      note:        document.getElementById('note').value.trim(),
+      segnalatoDa: document.getElementById('segnalatoDa').value.trim()
+    };
+  }
+
+  function validate(d){
+    if(!d.nome)        return 'Inserisci il nome.';
+    if(!d.cognome)     return 'Inserisci il cognome.';
+    if(!d.dataNascita) return 'Inserisci la data di nascita.';
+    if(!d.cellulare)   return 'Inserisci il numero di cellulare.';
+    if(!d.scuola)      return 'Seleziona la scuola.';
+    if(!d.segnalatoDa) return 'Inserisci chi sta segnalando l\'allievo.';
+    return null;
+  }
+
+  function showFeedback(msg, type){
+    const el = document.getElementById('feedback');
+    el.textContent = msg;
+    el.className = 'feedback ' + type;
+    el.style.display = 'block';
+    el.scrollIntoView({behavior:'smooth', block:'nearest'});
+  }
+
+  function setLoading(on){
+    const btn = document.getElementById('btnInvia');
+    if(on){
+      btn.dataset.origText = btn.innerHTML;
+      btn.innerHTML = '<span class="spinner"></span> Invio in corso…';
+      btn.classList.add('loading');
+    } else {
+      btn.innerHTML = btn.dataset.origText || btn.innerHTML;
+      btn.classList.remove('loading');
+    }
+  }
+
+  async function saveToSheet(data){
+    let dataNascitaFormatted = data.dataNascita || '';
+    if(dataNascitaFormatted && dataNascitaFormatted.includes('-')){
+      const parts = dataNascitaFormatted.split('-');
+      dataNascitaFormatted = parts[2] + '/' + parts[1] + '/' + parts[0];
+    }
+    const body = JSON.stringify({action:'submitContact', ...data, dataNascita: dataNascitaFormatted, canale:'raccolta'});
+    const res = await fetch(GAS_URL, {
+      method:'POST',
+      headers:{'Content-Type':'text/plain'},
+      body
+    });
+    return res.json();
+  }
+
+  async function invia(){
+    const d = getFormData();
+    const err = validate(d);
+    if(err){ showFeedback(err, 'err'); return; }
+
+    setLoading(true);
+    try {
+      await saveToSheet(d);
+      showFeedback('Contatto salvato, grazie della segnalazione!', 'ok');
+      ['nome','cognome','dataNascita','cellulare','scuola','note'].forEach(function(id){
+        document.getElementById(id).value = '';
+      });
+    } catch(e){
+      showFeedback("Errore nell'invio. Riprova.", 'err');
+    } finally {
+      setLoading(false);
+    }
+  }
+</script>
+</body>
+</html>
