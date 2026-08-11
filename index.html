@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SILP CGIL · Lascia i tuoi contatti — rev.8</title>
+<title>SILP CGIL · Lascia i tuoi contatti — rev.9</title>
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="icon" type="image/x-icon" href="favicon.ico">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -295,7 +295,7 @@
 <header>
   <img src="logo.jpg" alt="SILP CGIL">
   SILP CGIL · Coordinamento Scuole di Polizia
-  <span class="rev-tag">rev.8</span>
+  <span class="rev-tag">rev.9</span>
   <button class="icon-btn" id="adminBtn" title="Amministrazione" onclick="apriAdminPanel()">&#9881;</button>
 </header>
 
@@ -362,6 +362,10 @@
     <div class="field">
       <label for="note">Note <span style="font-weight:400;opacity:.6;">(facoltativo)</span></label>
       <textarea id="note" placeholder="Preferenze di destinazione, domande, altro…"></textarea>
+    </div>
+    <div class="field" id="segnalatoDaWrap" style="display:none;">
+      <label for="segnalatoDa">Segnalato da</label>
+      <input type="text" id="segnalatoDa" placeholder="Chi te lo ha segnalato">
     </div>
 
     <div class="privacy">
@@ -466,6 +470,8 @@
     if(cfg.adminCode && s === cfg.adminCode){
       corsoNumeroAttuale = cfg.corsoNumero || '';
       document.getElementById('adminBtn').style.display = 'flex';
+      document.getElementById('btnMichela').style.display = 'none';
+      document.getElementById('segnalatoDaWrap').style.display = 'block';
     }
   }
   verificaAdmin();
@@ -533,7 +539,8 @@
       dataNascita: document.getElementById('dataNascita').value,
       cellulare:   document.getElementById('cellulare').value.trim(),
       scuola:      document.getElementById('scuola').value,
-      note:        document.getElementById('note').value.trim()
+      note:        document.getElementById('note').value.trim(),
+      segnalatoDa: document.getElementById('segnalatoDa') ? document.getElementById('segnalatoDa').value.trim() : ''
     };
   }
 
