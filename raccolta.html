@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SILP CGIL · Segnala un allievo</title>
+<title>SILP CGIL · Segnala un allievo — rev.2</title>
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="icon" type="image/x-icon" href="favicon.ico">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -46,6 +46,13 @@
     text-transform:uppercase;
     color:var(--crema);
     opacity:.9;
+  }
+  .rev-tag{
+    margin-left:auto;
+    font-size:.62rem;
+    opacity:.45;
+    letter-spacing:.08em;
+    flex:0 0 auto;
   }
   header img{
     width:2.4rem;
@@ -204,6 +211,7 @@
 <header>
   <img src="logo.jpg" alt="SILP CGIL">
   SILP CGIL · Segnalazione allievi
+  <span class="rev-tag">rev.2</span>
 </header>
 
 <div class="corso-bar">
@@ -231,6 +239,10 @@
     <div class="field">
       <label for="cellulare">Cellulare</label>
       <input type="tel" id="cellulare" placeholder="333 1234567" autocomplete="tel">
+    </div>
+    <div class="field">
+      <label for="email">Email</label>
+      <input type="email" id="email" placeholder="mario.rossi@email.it" autocomplete="email">
     </div>
     <div class="field">
       <label for="scuola">Scuola</label>
@@ -289,6 +301,7 @@
       cognome:     document.getElementById('cognome').value.trim(),
       dataNascita: document.getElementById('dataNascita').value,
       cellulare:   document.getElementById('cellulare').value.trim(),
+      email:       document.getElementById('email').value.trim(),
       scuola:      document.getElementById('scuola').value,
       note:        document.getElementById('note').value.trim(),
       segnalatoDa: document.getElementById('segnalatoDa').value.trim()
@@ -300,6 +313,7 @@
     if(!d.cognome)     return 'Inserisci il cognome.';
     if(!d.dataNascita) return 'Inserisci la data di nascita.';
     if(!d.cellulare)   return 'Inserisci il numero di cellulare.';
+    if(d.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(d.email)) return 'L\'indirizzo email non sembra valido.';
     if(!d.scuola)      return 'Seleziona la scuola.';
     if(!d.segnalatoDa) return 'Inserisci chi sta segnalando l\'allievo.';
     return null;
