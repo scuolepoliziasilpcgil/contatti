@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SILP CGIL · Lascia i tuoi contatti — rev.10</title>
+<title>SILP CGIL · Lascia i tuoi contatti — rev.11</title>
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="icon" type="image/x-icon" href="favicon.ico">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -295,7 +295,7 @@
 <header>
   <img src="logo.jpg" alt="SILP CGIL">
   SILP CGIL · Coordinamento Scuole di Polizia
-  <span class="rev-tag">rev.10</span>
+  <span class="rev-tag">rev.11</span>
   <button class="icon-btn" id="adminBtn" title="Amministrazione" onclick="apriAdminPanel()">&#9881;</button>
 </header>
 
@@ -674,17 +674,42 @@
     } catch(e){ return false; }
   }
 
+  function segnaGiaInviato(telPulito){
+    try {
+      const inviati = JSON.parse(localStorage.getItem('silp233_inviati') || '[]');
+      if(!inviati.includes(telPulito)){ inviati.push(telPulito); }
+      localStorage.setItem('silp233_inviati', JSON.stringify(inviati));
+    } catch(e){ /* silenzioso */ }
+  }
+
   async function richiediOtp(){
     const d = getFormData();
     const err = validate(d);
     if(err){ showFeedback(err, 'err'); return; }
 
+    // Controllo veloce, solo su questo dispositivo, senza rete
     if(giaInviato(telefonoPulito(d))){
       showFeedback('Hai già lasciato i tuoi contatti. Ti ricontatteremo presto!', 'ok');
       return;
     }
 
     setLoading('btnInvia', true);
+
+    // Controllo vero, sul foglio condiviso, copre anche chi ha già inviato da un altro dispositivo
+    try {
+      const checkRes = await fetch(GAS_URL + '?action=checkTelefono&cellulare=' + encodeURIComponent(d.cellulare));
+      const checkEsito = await checkRes.json();
+      if(checkEsito.esiste){
+        segnaGiaInviato(telefonoPulito(d));
+        showFeedback('Hai già lasciato i tuoi contatti. Ti ricontatteremo presto!', 'ok');
+        setLoading('btnInvia', false);
+        return;
+      }
+    } catch(e){
+      // Se il controllo sul foglio fallisce per un problema di rete, si prosegue comunque:
+      // meglio rischiare un doppione raro che bloccare tutti per un errore temporaneo
+    }
+
     try {
       const res = await fetch(GAS_URL, {
         method:'POST',
@@ -740,15 +765,10 @@
   }
 
   async function completaInvio(d, verificato){
-    const telPulito = telefonoPulito(d);
     setLoading('btnInvia', true);
     try {
       await saveToSheet({...d, canale:'form', verificato});
-      try {
-        const inviati = JSON.parse(localStorage.getItem('silp233_inviati') || '[]');
-        if(!inviati.includes(telPulito)){ inviati.push(telPulito); }
-        localStorage.setItem('silp233_inviati', JSON.stringify(inviati));
-      } catch(e){ /* silenzioso */ }
+      segnaGiaInviato(telefonoPulito(d));
       document.getElementById('otpBlock').style.display = 'none';
       showFeedback('Contatto salvato. Ti ricontatteremo presto!', 'ok');
     } catch(e){
