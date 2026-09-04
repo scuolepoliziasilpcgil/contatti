@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SILP CGIL · Segnala un allievo — rev.2</title>
+<title>SILP CGIL · Segnala un allievo — rev.3</title>
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="icon" type="image/x-icon" href="favicon.ico">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -211,7 +211,7 @@
 <header>
   <img src="logo.jpg" alt="SILP CGIL">
   SILP CGIL · Segnalazione allievi
-  <span class="rev-tag">rev.2</span>
+  <span class="rev-tag">rev.3</span>
 </header>
 
 <div class="corso-bar">
@@ -233,8 +233,12 @@
       <input type="text" id="cognome" placeholder="Rossi" autocomplete="family-name">
     </div>
     <div class="field">
-      <label for="dataNascita">Data di nascita</label>
-      <input type="date" id="dataNascita">
+      <label for="dataNascitaGiorno">Data di nascita</label>
+      <div style="display:flex; gap:.5rem;">
+        <select id="dataNascitaGiorno" style="flex:1;"><option value="">Giorno</option></select>
+        <select id="dataNascitaMese" style="flex:1.4;"><option value="">Mese</option></select>
+        <select id="dataNascitaAnno" style="flex:1;"><option value="">Anno</option></select>
+      </div>
     </div>
     <div class="field">
       <label for="cellulare">Cellulare</label>
@@ -294,12 +298,45 @@
     return document.getElementById('corsoInput').value.trim() || '—';
   }
 
+  function popolaMenuData(){
+    const giorno = document.getElementById('dataNascitaGiorno');
+    const mese = document.getElementById('dataNascitaMese');
+    const anno = document.getElementById('dataNascitaAnno');
+
+    for(let g = 1; g <= 31; g++){
+      const opt = document.createElement('option');
+      opt.value = String(g).padStart(2,'0');
+      opt.textContent = g;
+      giorno.appendChild(opt);
+    }
+
+    const nomiMesi = ['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
+    nomiMesi.forEach(function(nome, i){
+      const opt = document.createElement('option');
+      opt.value = String(i+1).padStart(2,'0');
+      opt.textContent = nome;
+      mese.appendChild(opt);
+    });
+
+    const annoCorrente = new Date().getFullYear();
+    for(let a = annoCorrente - 16; a >= annoCorrente - 70; a--){
+      const opt = document.createElement('option');
+      opt.value = String(a);
+      opt.textContent = a;
+      anno.appendChild(opt);
+    }
+  }
+  popolaMenuData();
+
   function getFormData(){
+    const g = document.getElementById('dataNascitaGiorno').value;
+    const m = document.getElementById('dataNascitaMese').value;
+    const a = document.getElementById('dataNascitaAnno').value;
     return {
       corso:       getCourseNumber(),
       nome:        document.getElementById('nome').value.trim(),
       cognome:     document.getElementById('cognome').value.trim(),
-      dataNascita: document.getElementById('dataNascita').value,
+      dataNascita: (g && m && a) ? (a + '-' + m + '-' + g) : '',
       cellulare:   document.getElementById('cellulare').value.trim(),
       email:       document.getElementById('email').value.trim(),
       scuola:      document.getElementById('scuola').value,
@@ -363,7 +400,7 @@
     try {
       await saveToSheet(d);
       showFeedback('Contatto salvato, grazie della segnalazione!', 'ok');
-      ['nome','cognome','dataNascita','cellulare','scuola','note'].forEach(function(id){
+      ['nome','cognome','dataNascitaGiorno','dataNascitaMese','dataNascitaAnno','cellulare','email','scuola','note'].forEach(function(id){
         document.getElementById(id).value = '';
       });
     } catch(e){
